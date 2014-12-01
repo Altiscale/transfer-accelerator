@@ -134,9 +134,9 @@ public class TcpProxyServer {
   }
 
   public TcpTunnel setupTunnel(Socket clientSocket) {
-    final int kRetryMax = 3;
+    final int RETRY_MAX = 3;
     TcpTunnel tunnel = null;
-    for (int i = 0; i < kRetryMax; i++) {
+    for (int i = 0; i < RETRY_MAX; i++) {
       Server server = getRoundRobinServer();
       try {
         Socket serverSocket = new Socket(server.hostPort.host, server.hostPort.port);

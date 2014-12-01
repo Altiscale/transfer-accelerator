@@ -23,6 +23,23 @@ import java.net.*;
 import java.util.ArrayList;
 
 public class TcpTunnel {
+  // log4j logger.
+  private static Logger LOG = Logger.getLogger("TcpProxy");
+
+  // Proxy who created us. We run on its threadpool.
+  TcpProxyServer proxy;
+
+  // Socket from our client to us.
+  private Socket clientSocket;
+
+  // Socket from us to our server.
+  private Socket serverSocket;
+
+  // Client-to-Server one-directional tunnel.
+  OneDirectionTunnel clientServer;
+
+  // Server-to-Client one-directional tunnel.
+  OneDirectionTunnel serverClient;
 
   // We are just a proxy. We create two pipes, proxy all data and whoever closes the
   // connection first our job is to simply close the other end as well.
@@ -82,6 +99,7 @@ public class TcpTunnel {
       }
       LOG.info("Exiting thread [" + threadName + "]");
     }
+
     public Thread start(String threadName) {
       this.threadName = threadName;
       assert null == thread;  // we should never call this method twice.
@@ -91,24 +109,6 @@ public class TcpTunnel {
       return thread;
     }
   }
-
-  // log4j logger.
-  private static Logger LOG = Logger.getLogger("TcpProxy");
-
-  // Proxy who created us. We run on its threadpool.
-  TcpProxyServer proxy;
-
-  // Socket from our client to us.
-  private Socket clientSocket;
-
-  // Socket from us to our server.
-  private Socket serverSocket;
-
-  // Client-to-Server one-directional tunnel.
-  OneDirectionTunnel clientServer;
-
-  // Server-to-Client one-directional tunnel.
-  OneDirectionTunnel serverClient;
 
   public TcpTunnel(TcpProxyServer proxy, Socket clientSocket, Socket serverSocket) {
     this.clientSocket = clientSocket;
