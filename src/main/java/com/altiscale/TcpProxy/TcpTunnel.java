@@ -2,7 +2,7 @@
  * Copyright Altiscale 2014
  * Author: Zoran Dimitrijevic <zoran@altiscale.com>
  *
- * TcpProxy is a class to handle data transfer between incomming-outgoing socket pairs (tunnels)
+ * TcpTunnel is a class to handle data transfer between incomming-outgoing socket pairs (tunnels)
  * and a threadpool that serves all these existing tunnels.
  *
  * Goal of TcpProxy is to simply tunnel all data between incoming sockets and their destination
