@@ -2,7 +2,7 @@
  * Copyright Altiscale 2014
  * Author: Cosmin Negruseri <cosmin@altiscale.com>
  *
- * SecondMinuteHourCounter implements three counters over a second, a minute and an hour respective
+ * SecondMinuteHourCounter implements three counters over a second, a minute and an hour sliding
  * time windows.
  * 
 **/
@@ -16,7 +16,7 @@ public class SecondMinuteHourCounter {
   // Name of the counter
   private String name;
 
-  // Deques keeping the counts for the last 60 seconds respectively 60  minutes. 
+  // Deques keeping the counts for the last 60 seconds and 60  minutes respectively.
   private ArrayDeque<Pair> seconds, minutes;
 
   // Counter for the current hour.
@@ -25,10 +25,24 @@ public class SecondMinuteHourCounter {
   class Pair {
     long timestamp;
     int count;
+
     public Pair(long timestamp, int count) {
       this.timestamp = timestamp;
       this.count = count;
     }
+
+    public long getTimestamp() {
+      return this.timestamp;
+    }
+
+    public int getCount() {
+      return this.count;
+    }
+
+    public void incCount(int amount) {
+      this.count += amount;
+    }
+
   }
 
   public SecondMinuteHourCounter(String name) {
@@ -40,30 +54,30 @@ public class SecondMinuteHourCounter {
 
   public void incBy(int amount) {
     long currentSecond = System.currentTimeMillis() / 1000;
-    if (seconds.size() > 0 && seconds.getLast().timestamp == currentSecond) {
-      seconds.getLast().count += amount;
+    if (seconds.size() > 0 && seconds.getLast().getTimestamp() == currentSecond) {
+      seconds.getLast().incCount(amount);
     } else {
       seconds.add(new Pair(currentSecond, amount));
     }
     
-    while (seconds.size() > 0 && seconds.getFirst().timestamp < currentSecond - 60) {
+    while (seconds.size() > 0 && seconds.getFirst().getTimestamp() < currentSecond - 60) {
       seconds.removeFirst();
     }
 
     long currentMinute = currentSecond / 60;
-    if (minutes.size() > 0 && minutes.getLast().timestamp == currentMinute) {
-      minutes.getLast().count += amount;
+    if (minutes.size() > 0 && minutes.getLast().getTimestamp() == currentMinute) {
+      minutes.getLast().incCount(amount);
     } else {
       minutes.add(new Pair(currentMinute, amount));
     }
 
-    while (minutes.size() > 0 && minutes.getFirst().timestamp < currentMinute - 60) {
+    while (minutes.size() > 0 && minutes.getFirst().getTimestamp() < currentMinute - 60) {
       minutes.removeFirst();
     }
 
     long currentHour = currentMinute / 60;
-    if (currentHour == hour.timestamp) {
-      hour.count += amount;
+    if (currentHour == hour.getTimestamp()) {
+      hour.incCount(amount);
     } else {
       hour = new Pair(currentHour, amount);
     }
@@ -71,47 +85,25 @@ public class SecondMinuteHourCounter {
 
   public int getLastSecond() {
     long currentSecond = System.currentTimeMillis() / 1000;
-    if (seconds.size() > 0 && seconds.getLast().timestamp == currentSecond) {
-      return seconds.getLast().count;
+    if (seconds.size() > 0 && seconds.getLast().getTimestamp() == currentSecond) {
+      return seconds.getLast().getCount();
     }
     return 0;
   }
 
   public int getLastMinute() {
     long currentMinute = System.currentTimeMillis() / 1000 / 60;
-    if (minutes.size() > 0 && currentMinute == minutes.getLast().timestamp) {
-      return minutes.getLast().count;
+    if (minutes.size() > 0 && currentMinute == minutes.getLast().getTimestamp()) {
+      return minutes.getLast().getCount();
     }
     return 0;
   }
 
   public int getLastHour() {
     long currentHour = System.currentTimeMillis() / 1000 / 60 / 60;
-    if (currentHour == hour.timestamp) {
-      return hour.count;
+    if (currentHour == hour.getTimestamp()) {
+      return hour.getCount();
     }
     return 0;
-  }
-
-  public static void main(String[] args) {
-    SecondMinuteHourCounter rc = new SecondMinuteHourCounter("test");
-
-    System.out.println("aaaa");
-
-    long time = System.currentTimeMillis() / 1000;
-
-    for (int i = 0; i <= 120; i++) {
-        if (time + i == System.currentTimeMillis() / 1000) {
-          if (i < 55) {
-            rc.incBy(10);
-          }
-          rc.incBy(10);
-          System.out.println(" " + System.currentTimeMillis() + " : " +
-                             rc.getLastSecond() + " : " +
-                             rc.getLastMinute() + " : " +
-                             rc.getLastHour());
-          while (time + i == System.currentTimeMillis() / 1000) {}
-        }
-    }
   }
 }
