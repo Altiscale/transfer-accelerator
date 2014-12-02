@@ -82,7 +82,7 @@ public class TcpTunnel {
           }
         } while (cnt >= 0);
       } catch (IOException ioe) {
-        LOG.error("IO exception catched while reading: " + ioe.getMessage());
+        LOG.info("Closing socket after IO exception while reading: " + ioe.getMessage());
       }
       // Either the input stream is closed or we got an exception. Either way, close the
       // sockets since we're done with this tunnel.
