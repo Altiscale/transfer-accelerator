@@ -42,7 +42,7 @@ public class TcpProxyServer {
     }
   }
 
-  public class HostPort {
+  protected class HostPort {
     String host;
     int port;
 
@@ -52,7 +52,7 @@ public class TcpProxyServer {
     }
   }
 
-  public class ProxyConfiguration {
+  protected class ProxyConfiguration {
     int listeningPort;
     ArrayList<HostPort> serverHostPortList;
 
@@ -66,7 +66,7 @@ public class TcpProxyServer {
     }
   }
 
-  public class Server {
+  protected class Server {
     HostPort hostPort;
 
     SecondMinuteHourCount requestCnt;
