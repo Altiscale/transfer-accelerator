@@ -145,6 +145,8 @@ public class TcpProxyServer {
             clientSocket.getPort() + "] and server [" +
             server.hostPort.host + ":" + server.hostPort.port + "]");
         tunnel = new TcpTunnel(this, clientSocket, serverSocket);
+        // Create threads that will handle this tunnel.
+        tunnel.spawnTunnelThreads();
         return tunnel;
       } catch (IOException ioe) {
         LOG.error("Error while connecting to server " +

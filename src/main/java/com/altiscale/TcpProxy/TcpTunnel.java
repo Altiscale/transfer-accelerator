@@ -43,7 +43,7 @@ public class TcpTunnel {
 
   // We are just a proxy. We create two pipes, proxy all data and whoever closes the
   // connection first our job is to simply close the other end as well.
-  public class OneDirectionTunnel implements Runnable {
+  protected class OneDirectionTunnel implements Runnable {
     private String threadName;
     private Thread thread;
 
@@ -110,13 +110,16 @@ public class TcpTunnel {
     }
   }
 
-  public TcpTunnel(TcpProxyServer proxy, Socket clientSocket, Socket serverSocket) {
-    this.clientSocket = clientSocket;
-    this.serverSocket = clientSocket;
+  public TcpTunnel(TcpProxyServer proxy, Socket client, Socket server) {
+    clientSocket = client;
+    serverSocket = server;
+
     // Create two one-directional tunnels to connect both pipes.
     clientServer = new OneDirectionTunnel(clientSocket, serverSocket);
     serverClient = new OneDirectionTunnel(serverSocket, clientSocket);
+  }
 
+  public void spawnTunnelThreads() {
     // Start both of them in their own threads.
     clientServer.start("clientServer");
     serverClient.start("serverClient");
