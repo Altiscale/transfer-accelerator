@@ -16,9 +16,9 @@ import java.util.ArrayDeque;
 
 class Pair {
   private long timestamp;
-  private int count;
+  private long count;
 
-  public Pair(long timestamp, int count) {
+  public Pair(long timestamp, long count) {
     this.timestamp = timestamp;
     this.count = count;
   }
@@ -27,11 +27,11 @@ class Pair {
     return this.timestamp;
   }
 
-  public int getCount() {
+  public long getCount() {
     return this.count;
   }
 
-  public void incCount(int amount) {
+  public void incCount(long amount) {
     this.count += amount;
   }
 }
@@ -39,7 +39,7 @@ class Pair {
 // This class implements a sliding window with a set of buckets that are kept in a Queue.
 // It's not perfectly accurate. The more buckets the better the accuracy.
 class SlidingWindowCounter {
-  private int counter;
+  private long counter;
   private ArrayDeque<Pair> buckets;
   private long numBuckets;
   private long bucketSize;
@@ -53,7 +53,7 @@ class SlidingWindowCounter {
     this.buckets = new ArrayDeque<Pair>();
   }
 
-  public void incrementBy(int amount) {
+  public void incrementBy(long amount) {
     removeOutdatedBuckets();
     counter += amount;
     long bucketTimestamp = System.currentTimeMillis() / bucketSize;
@@ -64,7 +64,7 @@ class SlidingWindowCounter {
     }
   }
   
-  public int getCount() {
+  public long getCount() {
     removeOutdatedBuckets();
     return counter;
   }
@@ -94,21 +94,21 @@ public class SecondMinuteHourCounter {
     this.incrementBy(1);
   }
 
-  public synchronized void incrementBy(int amount) {
+  public synchronized void incrementBy(long amount) {
     secondCounter.incrementBy(amount);
     minuteCounter.incrementBy(amount);
     hourCounter.incrementBy(amount);
   }
 
-  public synchronized int getLastSecondCnt() {
+  public synchronized long getLastSecondCnt() {
     return secondCounter.getCount();
   }
 
-  public synchronized int getLastMinuteCnt() {
+  public synchronized long getLastMinuteCnt() {
     return minuteCounter.getCount();
   }
 
-  public synchronized int getLastHourCnt() {
+  public synchronized long getLastHourCnt() {
     return hourCounter.getCount();
   }
 }
