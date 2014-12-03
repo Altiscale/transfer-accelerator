@@ -26,7 +26,7 @@ public class TcpTunnel {
   // log4j logger.
   private static Logger LOG = Logger.getLogger("TcpProxy");
 
-  // Proxy who created us. We run on its threadpool.
+  // Proxy who created us.
   TcpProxyServer proxy;
 
   // Socket from our client to us.
@@ -50,7 +50,8 @@ public class TcpTunnel {
     private Socket sourceSocket;
     private Socket destinationSocket;
 
-    public OneDirectionTunnel(Socket source, Socket destination) {
+    public OneDirectionTunnel(Socket source, Socket destination, String name) {
+      threadName = name;
       thread = null;
       sourceSocket = source;
       destinationSocket = destination;
@@ -101,8 +102,7 @@ public class TcpTunnel {
       LOG.info("Exiting thread [" + threadName + "]");
     }
 
-    public Thread start(String name) {
-      threadName = name;
+    public Thread start() {
       assert null == thread;  // we should never call this method twice.
       LOG.info("Starting thread [" + threadName + "]");
       thread = new Thread(this, threadName);
@@ -116,14 +116,14 @@ public class TcpTunnel {
     serverSocket = server;
 
     // Create two one-directional tunnels to connect both pipes.
-    clientServer = new OneDirectionTunnel(clientSocket, serverSocket);
-    serverClient = new OneDirectionTunnel(serverSocket, clientSocket);
+    clientServer = new OneDirectionTunnel(clientSocket, serverSocket, "clientServer");
+    serverClient = new OneDirectionTunnel(serverSocket, clientSocket, "serverClient");
   }
 
   public void spawnTunnelThreads() {
     // Start both of them in their own threads.
-    clientServer.start("clientServer");
-    serverClient.start("serverClient");
+    clientServer.start();
+    serverClient.start();
   }
 
   public boolean isClosed() {
