@@ -47,26 +47,26 @@ public class TcpTunnel {
     private String threadName;
     private Thread thread;
 
-    private Socket source;
-    private Socket destination;
+    private Socket sourceSocket;
+    private Socket destinationSocket;
 
     public OneDirectionTunnel(Socket source, Socket destination) {
       thread = null;
-      this.source = source;
-      this.destination = destination;
+      sourceSocket = source;
+      destinationSocket = destination;
     }
 
     public void run() {
       DataInputStream input = null;
       DataOutputStream output = null;
       try {
-        input = new DataInputStream(source.getInputStream());
-        output = new DataOutputStream(destination.getOutputStream());
+        input = new DataInputStream(sourceSocket.getInputStream());
+        output = new DataOutputStream(destinationSocket.getOutputStream());
       } catch (IOException ioe) {
-        LOG.error("Could not open input and outpus streams.");
+        LOG.error("Could not open input or output stream.");
       }
       int cnt = 0;
-      byte[] buffer = new byte[1024];
+      byte[] buffer = new byte[1024 * 8];  // 8KB buffer.
       try {
         do {
           // Read some data.
@@ -87,11 +87,11 @@ public class TcpTunnel {
       // Either the input stream is closed or we got an exception. Either way, close the
       // sockets since we're done with this tunnel.
       try {
-        if (!source.isClosed()) {
-          source.close();
+        if (!sourceSocket.isClosed()) {
+          sourceSocket.close();
         }
-        if (!destination.isClosed()) {
-          destination.close();
+        if (!destinationSocket.isClosed()) {
+          destinationSocket.close();
         }
       } catch (IOException ioe) {
         LOG.error("IO exception while closing sockets in thread [" + threadName +
@@ -100,8 +100,8 @@ public class TcpTunnel {
       LOG.info("Exiting thread [" + threadName + "]");
     }
 
-    public Thread start(String threadName) {
-      this.threadName = threadName;
+    public Thread start(String name) {
+      threadName = name;
       assert null == thread;  // we should never call this method twice.
       LOG.info("Starting thread [" + threadName + "]");
       thread = new Thread(this, threadName);
