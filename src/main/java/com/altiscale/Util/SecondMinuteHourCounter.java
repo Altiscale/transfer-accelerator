@@ -10,8 +10,7 @@
  * throughput of a network transfer.
 **/
 
-// TODO(cosmin) move this to a separate package.
-package com.altiscale.TcpProxy;
+package com.altiscale.Util;
 
 import java.util.ArrayDeque;
 
