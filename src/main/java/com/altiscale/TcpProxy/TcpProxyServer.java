@@ -177,6 +177,8 @@ public class TcpProxyServer {
   public static void main (String[] args) {
     TcpProxyServer proxy = new TcpProxyServer();
 
+    // TODO(zoran): add command line arguments using Apache Commons CLI.
+    // TODO(zoran): enable users to specify one hostname and multiple ports.
     if (args.length < 3) {
       LOG.info(proxy.usage());
       System.exit(1);
