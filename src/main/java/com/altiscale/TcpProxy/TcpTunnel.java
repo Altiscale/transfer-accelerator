@@ -64,6 +64,7 @@ public class TcpTunnel {
         output = new DataOutputStream(destinationSocket.getOutputStream());
       } catch (IOException ioe) {
         LOG.error("Could not open input or output stream.");
+        return;
       }
       int cnt = 0;
       byte[] buffer = new byte[1024 * 8];  // 8KB buffer.
