@@ -3,7 +3,7 @@
  * Author: Cosmin Negruseri <cosmin@altiscale.com>
  *
  * SecondMinuteHourCounter implements three counters over a second, a minute and an hour sliding
- * time windows.
+ * time windows and a total count.
  *
  * This class is usefull in server side debugging and performance analysis. For example we can use
  * it to keep counters for how many requests are handled by a web server or for measuring the
@@ -81,10 +81,12 @@ class SlidingWindowCounter {
 public class SecondMinuteHourCounter {
 
   private SlidingWindowCounter secondCounter, minuteCounter, hourCounter;
+  private long totalCounter;
   private String name;
 
   public SecondMinuteHourCounter(String name) {
     this.name = name;
+    this.totalCounter = 0;
     this.secondCounter = new SlidingWindowCounter(1000, 1000);
     this.minuteCounter = new SlidingWindowCounter(1000, 60 * 1000);
     this.hourCounter = new SlidingWindowCounter(1000, 60 * 60 * 1000);
@@ -95,6 +97,7 @@ public class SecondMinuteHourCounter {
   }
 
   public synchronized void incrementBy(long amount) {
+    totalCounter += amount;
     secondCounter.incrementBy(amount);
     minuteCounter.incrementBy(amount);
     hourCounter.incrementBy(amount);
@@ -110,5 +113,9 @@ public class SecondMinuteHourCounter {
 
   public synchronized long getLastHourCnt() {
     return hourCounter.getCount();
+  }
+
+  public synchronized long getTotalCnt() {
+    return totalCounter;
   }
 }
