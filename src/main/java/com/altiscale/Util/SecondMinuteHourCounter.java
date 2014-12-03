@@ -10,7 +10,7 @@
  * throughput of a network transfer.
 **/
 
-package com.altiscale.Util;
+//TODO(cosmin) to add unittests ASAP
 
 import java.util.ArrayDeque;
 
