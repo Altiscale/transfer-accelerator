@@ -4,106 +4,111 @@
  *
  * SecondMinuteHourCounter implements three counters over a second, a minute and an hour sliding
  * time windows.
- * 
+ *
+ * This class is usefull in server side debugging and performance analysis. For example we can use
+ * it to keep counters for how many requests are handled by a web server or for measuring the
+ * throughput of a network transfer.
 **/
  
 package com.altiscale.TcpProxy;
 
 import java.util.ArrayDeque;
 
+class Pair {
+  private long timestamp;
+  private int count;
+
+  public Pair(long timestamp, int count) {
+    this.timestamp = timestamp;
+    this.count = count;
+  }
+
+  public long getTimestamp() {
+    return this.timestamp;
+  }
+
+  public int getCount() {
+    return this.count;
+  }
+
+  public void incCount(int amount) {
+    this.count += amount;
+  }
+}
+
+// This class implements a sliding window with a set of buckets that are kept in a Queue.
+// It's not perfectly accurate. The more buckets the better the accuracy.
+class SlidingWindowCounter {
+  private int counter;
+  private ArrayDeque<Pair> buckets;
+  private long numBuckets;
+  private long bucketSize;
+  private long windowSize;
+
+  // we assume windowSize is a multiple of numBuckets
+  public SlidingWindowCounter(int numBuckets, long windowSize) {
+    this.numBuckets = numBuckets;
+    this.windowSize = windowSize;
+    this.bucketSize = windowSize / numBuckets;
+    this.buckets = new ArrayDeque<Pair>();
+  }
+
+  public void incrementBy(int amount) {
+    removeOutdatedBuckets();
+    counter += amount;
+    long bucketTimestamp = System.currentTimeMillis() / bucketSize;
+    if (buckets.size() > 0 && buckets.getLast().getTimestamp() == bucketTimestamp) {
+      buckets.getLast().incCount(amount);
+    } else {
+      buckets.add(new Pair(bucketTimestamp, amount));
+    }
+  }
+  
+  public int getCount() {
+    removeOutdatedBuckets();
+    return counter;
+  }
+
+  private void removeOutdatedBuckets() {
+    long bucketTimestamp = System.currentTimeMillis() / bucketSize;
+    while (buckets.size() > 0 && buckets.getFirst().getTimestamp() * bucketSize < bucketTimestamp * bucketSize - windowSize) {
+      counter -= buckets.getFirst().getCount();
+      buckets.removeFirst();
+    }
+  }
+}
+
 public class SecondMinuteHourCounter {
 
-  // Name of the counter
+  private SlidingWindowCounter secondCounter, minuteCounter, hourCounter;
   private String name;
-
-  // Deques keeping the counts for the last 60 seconds and 60  minutes respectively.
-  private ArrayDeque<Pair> seconds, minutes;
-
-  // Counter for the current hour.
-  private Pair hour;
-
-  class Pair {
-    long timestamp;
-    int count;
-
-    public Pair(long timestamp, int count) {
-      this.timestamp = timestamp;
-      this.count = count;
-    }
-
-    public long getTimestamp() {
-      return this.timestamp;
-    }
-
-    public int getCount() {
-      return this.count;
-    }
-
-    public void incCount(int amount) {
-      this.count += amount;
-    }
-
-  }
 
   public SecondMinuteHourCounter(String name) {
     this.name = name;
-    this.seconds = new ArrayDeque<Pair>();
-    this.minutes = new ArrayDeque<Pair>();
-    this.hour = new Pair(-1, 0);
+    this.secondCounter = new SlidingWindowCounter(1000, 1000);
+    this.minuteCounter = new SlidingWindowCounter(1000, 60 * 1000);
+    this.hourCounter = new SlidingWindowCounter(1000, 60 * 60 * 1000);
   }
 
-  public void incBy(int amount) {
-    long currentSecond = System.currentTimeMillis() / 1000;
-    if (seconds.size() > 0 && seconds.getLast().getTimestamp() == currentSecond) {
-      seconds.getLast().incCount(amount);
-    } else {
-      seconds.add(new Pair(currentSecond, amount));
-    }
-    
-    while (seconds.size() > 0 && seconds.getFirst().getTimestamp() < currentSecond - 60) {
-      seconds.removeFirst();
-    }
-
-    long currentMinute = currentSecond / 60;
-    if (minutes.size() > 0 && minutes.getLast().getTimestamp() == currentMinute) {
-      minutes.getLast().incCount(amount);
-    } else {
-      minutes.add(new Pair(currentMinute, amount));
-    }
-
-    while (minutes.size() > 0 && minutes.getFirst().getTimestamp() < currentMinute - 60) {
-      minutes.removeFirst();
-    }
-
-    long currentHour = currentMinute / 60;
-    if (currentHour == hour.getTimestamp()) {
-      hour.incCount(amount);
-    } else {
-      hour = new Pair(currentHour, amount);
-    }
+  public synchronized void increment() {
+    this.incrementBy(1);
   }
 
-  public int getLastSecond() {
-    long currentSecond = System.currentTimeMillis() / 1000;
-    if (seconds.size() > 0 && seconds.getLast().getTimestamp() == currentSecond) {
-      return seconds.getLast().getCount();
-    }
-    return 0;
+  public synchronized void incrementBy(int amount) {
+    secondCounter.incrementBy(amount);
+    minuteCounter.incrementBy(amount);
+    hourCounter.incrementBy(amount);
   }
 
-  public int getLastMinute() {
-    long currentMinute = System.currentTimeMillis() / 1000 / 60;
-    if (minutes.size() > 0 && currentMinute == minutes.getLast().getTimestamp()) {
-      return minutes.getLast().getCount();
-    }
-    return 0;
+  public synchronized int getLastSecond() {
+    return secondCounter.getCount();
   }
 
-  public int getLastHour() {
-    long currentHour = System.currentTimeMillis() / 1000 / 60 / 60;
-    if (currentHour == hour.getTimestamp()) {
-      return hour.getCount();
-    }
-    return 0;
+  public synchronized int getLastMinute() {
+    return minuteCounter.getCount();
+  }
+
+  public synchronized int getLastHour() {
+    return hourCounter.getCount();
   }
 }
