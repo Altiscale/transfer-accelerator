@@ -9,7 +9,8 @@
  * it to keep counters for how many requests are handled by a web server or for measuring the
  * throughput of a network transfer.
 **/
- 
+
+// TODO(cosmin) move this to a separate package.
 package com.altiscale.TcpProxy;
 
 import java.util.ArrayDeque;
@@ -100,15 +101,15 @@ public class SecondMinuteHourCounter {
     hourCounter.incrementBy(amount);
   }
 
-  public synchronized int getLastSecond() {
+  public synchronized int getLastSecondCnt() {
     return secondCounter.getCount();
   }
 
-  public synchronized int getLastMinute() {
+  public synchronized int getLastMinuteCnt() {
     return minuteCounter.getCount();
   }
 
-  public synchronized int getLastHour() {
+  public synchronized int getLastHourCnt() {
     return hourCounter.getCount();
   }
 }
