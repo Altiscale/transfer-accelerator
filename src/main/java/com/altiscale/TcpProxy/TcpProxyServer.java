@@ -107,8 +107,8 @@ public class TcpProxyServer {
     serverList = new ArrayList<Server>();
   }
 
-  public void init(ProxyConfiguration config) {
-    this.config = config;
+  public void init(ProxyConfiguration conf) {
+    config = conf;
 
     for (HostPort serverHostPort : config.serverHostPortList) {
       serverList.add(new Server(serverHostPort));

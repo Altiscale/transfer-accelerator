@@ -50,6 +50,14 @@ public class TcpTunnel {
     private Socket sourceSocket;
     private Socket destinationSocket;
 
+    /**
+     *  OneDirectionalTunnel is responsible for reading on its source socket and writing
+     *  all data to its destination socket. It is blocking, so it runs in its own thread.
+     *
+     *  @param source       Socket from which we read data
+     *  @param destination  Socket to which we write data
+     *  @param name         Thread name for the thread we'll create when started.
+     */
     public OneDirectionTunnel(Socket source, Socket destination, String name) {
       threadName = name;
       thread = null;
@@ -57,6 +65,23 @@ public class TcpTunnel {
       destinationSocket = destination;
     }
 
+    /*
+     *  Method to create new thread which will run() our tunnel.
+     *
+     *  @return  Thread in which we're running.
+     */
+    public Thread start() {
+      assert null == thread;  // we should never call this method twice.
+      LOG.info("Starting thread [" + threadName + "]");
+      thread = new Thread(this, threadName);
+      thread.start();
+      return thread;
+    }
+
+    /*
+     *  We open input and output streams, read the input and then write all data to output.
+     *  If anything happens we simply close the sockets and finish.
+     */
     public void run() {
       DataInputStream input = null;
       DataOutputStream output = null;
@@ -101,16 +126,15 @@ public class TcpTunnel {
       }
       LOG.info("Exiting thread [" + threadName + "]");
     }
-
-    public Thread start() {
-      assert null == thread;  // we should never call this method twice.
-      LOG.info("Starting thread [" + threadName + "]");
-      thread = new Thread(this, threadName);
-      thread.start();
-      return thread;
-    }
   }
 
+  /*
+   *  TcpTunnel creates two pipes, connecting client and server in both directions.
+   *
+   *  @param  proxy   TcpProxyServer so we can access its methods for maintaining statistics.
+   *  @param  client  Socket connected to our client
+   *  @param  server  Socket connected to server selected for this client by proxy
+   */
   public TcpTunnel(TcpProxyServer proxy, Socket client, Socket server) {
     clientSocket = client;
     serverSocket = server;
@@ -120,12 +144,20 @@ public class TcpTunnel {
     serverClient = new OneDirectionTunnel(serverSocket, clientSocket, "serverClient");
   }
 
+  /*
+   *  Starts data tunneling in two OneDirectionTunnel threads.
+   */
   public void spawnTunnelThreads() {
     // Start both of them in their own threads.
     clientServer.start();
     serverClient.start();
   }
 
+  /*
+   *  Returns whether our tunnel is closed.
+   *
+   *  @return  True if both sockets are closed. False otherwise.
+   */
   public boolean isClosed() {
     return clientSocket.isClosed() && serverSocket.isClosed();
   }
