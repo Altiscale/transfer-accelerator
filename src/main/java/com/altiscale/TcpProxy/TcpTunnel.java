@@ -17,9 +17,11 @@ package com.altiscale.TcpProxy;
 
 import org.apache.log4j.Logger;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.lang.Thread;
-import java.net.*;
+import java.net.Socket;
 import java.util.ArrayList;
 
 public class TcpTunnel {

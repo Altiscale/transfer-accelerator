@@ -9,9 +9,11 @@ package com.altiscale.TcpProxy;
 import com.altiscale.TcpProxy.TcpTunnel;
 import org.apache.log4j.BasicConfigurator;
 
-import java.io.*;
-import java.lang.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;

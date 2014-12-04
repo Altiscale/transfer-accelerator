@@ -17,8 +17,9 @@ package com.altiscale.TcpProxy;
 
 import org.apache.log4j.Logger;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 
 public class TcpProxyServer {
