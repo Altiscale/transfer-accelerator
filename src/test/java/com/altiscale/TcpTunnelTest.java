@@ -70,7 +70,7 @@ public class TcpTunnelTest extends TestCase {
         assert expectedInputText.equals(word);
         mySocket.close();
       } catch (IOException ioe) {
-        System.out.println("Exception in testCLient: " + ioe.getMessage());
+        System.out.println("Exception in testClient: " + ioe.getMessage());
         assert false;
       }
     }
@@ -96,6 +96,8 @@ public class TcpTunnelTest extends TestCase {
     int port = 8787;
 
     try {
+      ServerSocket serverSocket = new ServerSocket(port);
+
       EchoClient echoClient = new EchoClient(port,
           "42", "What is the answer to life the universe and everything?");
 
@@ -105,7 +107,6 @@ public class TcpTunnelTest extends TestCase {
       echoClient.start();
       echoServer.start();
 
-      ServerSocket serverSocket = new ServerSocket(port);
       Socket client = serverSocket.accept();
       assert client != null;
       Socket server = serverSocket.accept();
