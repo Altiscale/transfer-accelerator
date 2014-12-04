@@ -81,8 +81,8 @@ class SlidingWindowCounter {
   private void removeOutdatedBuckets() {
     long bucketTimestamp = System.currentTimeMillis() / bucketSize;
     while (buckets.size() > 0 &&
-           buckets.getFirst().getTimestamp() * bucketSize < bucketTimestamp * bucketSize
-             - windowSize) {
+           buckets.getFirst().getTimestamp() * bucketSize <
+               bucketTimestamp * bucketSize - windowSize) {
       counter -= buckets.getFirst().getCount();
       buckets.removeFirst();
     }
