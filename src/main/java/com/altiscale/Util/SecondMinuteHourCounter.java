@@ -11,44 +11,52 @@
 **/
 
 //TODO(cosmin) to add unittests ASAP
+//TODO(cosmin) to add java style comments ASAP
 
 import java.util.ArrayDeque;
 
-class Pair {
-  private long timestamp;
-  private long count;
-
-  public Pair(long timestamp, long count) {
-    this.timestamp = timestamp;
-    this.count = count;
-  }
-
-  public long getTimestamp() {
-    return this.timestamp;
-  }
-
-  public long getCount() {
-    return this.count;
-  }
-
-  public void incCount(long amount) {
-    this.count += amount;
-  }
-}
-
-// This class implements a sliding window with a set of buckets that are kept in a Queue.
-// It's not perfectly accurate. The more buckets the better the accuracy.
 class SlidingWindowCounter {
+  /** This class implements a sparse sliding window using a set of buckets kept in a Deque.
+   *  @param numBuckets Number of buckets per each interval (more buckets, higher precision) 
+   */
+
   private long counter;
   private ArrayDeque<Pair> buckets;
   private long numBuckets;
   private long bucketSize;
   private long windowSize;
 
-  // we assume windowSize is a multiple of numBuckets
+  class Pair {
+    /** This class implements a pair needed in our sparse sliding window implementation.
+     *
+     * @param timestamp keeps a id for the bucket we're working on from the beggining of time.
+     * @param count keeps the count for that particular bucket.
+     */
+    private long timestamp;
+    private long count;
+
+    public Pair(long timestamp, long count) {
+      this.timestamp = timestamp;
+      this.count = count;
+    }
+
+    public long getTimestamp() {
+      return this.timestamp;
+    }
+
+    public long getCount() {
+      return this.count;
+    }
+
+    public void incCount(long amount) {
+      this.count += amount;
+    }
+  }
+
   public SlidingWindowCounter(int numBuckets, long windowSize) {
     this.numBuckets = numBuckets;
     this.windowSize = windowSize;
+    // we assume windowSize is a multiple of numBuckets
     this.bucketSize = windowSize / numBuckets;
     this.buckets = new ArrayDeque<Pair>();
   }
@@ -69,9 +77,12 @@ class SlidingWindowCounter {
     return counter;
   }
 
+  /** This method lazily deletes buckets that are no longer within the sliding window */
   private void removeOutdatedBuckets() {
     long bucketTimestamp = System.currentTimeMillis() / bucketSize;
-    while (buckets.size() > 0 && buckets.getFirst().getTimestamp() * bucketSize < bucketTimestamp * bucketSize - windowSize) {
+    while (buckets.size() > 0 &&
+           buckets.getFirst().getTimestamp() * bucketSize < bucketTimestamp * bucketSize
+             - windowSize) {
       counter -= buckets.getFirst().getCount();
       buckets.removeFirst();
     }
