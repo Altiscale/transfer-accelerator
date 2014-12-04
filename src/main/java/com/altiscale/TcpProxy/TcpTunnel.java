@@ -52,7 +52,7 @@ public class TcpTunnel {
 
     /**
      *  OneDirectionalTunnel is responsible for reading on its source socket and writing
-     *  all data to its destination socket. Its blocking, so it runs in its own thread.
+     *  all data to its destination socket. It is blocking, so it runs in its own thread.
      *
      *  @param source       Socket from which we read data
      *  @param destination  Socket to which we write data
@@ -156,7 +156,7 @@ public class TcpTunnel {
   /*
    *  Returns whether our tunnel is closed.
    *
-   *  @return  rue if both sockets are closed.
+   *  @return  True if both sockets are closed. False otherwise.
    */
   public boolean isClosed() {
     return clientSocket.isClosed() && serverSocket.isClosed();
