@@ -29,23 +29,71 @@ class TestTimer extends AltiTimer {
 
 public class SecondMinuteHourCounterTest extends TestCase {
 
-   /**
-    * Create the test case
-    *
-    * @param testName name of the test case
-    */
-   public SecondMinuteHourCounterTest(String testName) {
-       super(testName);
-   }
+  /**
+   * Create the test case
+   *
+   * @param testName name of the test case
+   */
+  public SecondMinuteHourCounterTest(String testName) {
+    super(testName);
+  }
  
-   /**
-    * @return the suite of tests being tested
-    */
-   public static Test suite() {
-     return new TestSuite(SecondMinuteHourCounterTest.class);
-   }
+  /**
+   * @return the suite of tests being tested
+   */
+  public static Test suite() {
+    return new TestSuite(SecondMinuteHourCounterTest.class);
+  }
 
-  public void testSimple() {
+  public void testExpireAfterOneSecond() {
+    TestTimer timer = new TestTimer(0);
+    SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "Test Counter");
+
+    counter.increment();
+
+    timer.setTime(999);
+    assert counter.getLastSecondCnt() == 1;
+
+    timer.setTime(1000);
+    assert counter.getLastSecondCnt() == 1;
+
+    timer.setTime(1001);
+    assert counter.getLastSecondCnt() == 0;
+  }
+
+  public void testExpireAfterOneMinute() {
+    TestTimer timer = new TestTimer(0);
+    SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "Test Counter");
+
+    counter.increment();
+
+    timer.setTime(60000);
+    assert counter.getLastMinuteCnt() == 1;
+
+    timer.setTime(60059);
+    assert counter.getLastMinuteCnt() == 1;
+
+    timer.setTime(60060);
+    assert counter.getLastMinuteCnt() == 0;
+  }
+
+  public void testExpireAfterOneHour() {
+    TestTimer timer = new TestTimer(0);
+    SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "TestCounter");
+  
+    counter.increment();
+
+    timer.setTime(3600000);
+    assert counter.getLastHourCnt() == 1;
+
+    timer.setTime(3603590);
+    assert counter.getLastHourCnt() == 1;
+
+    timer.setTime(3603600);
+    assert counter.getLastHourCnt() == 0;
+  }
+
+  public void testThreeIncrements() {
     /**
        Simple test where increment is used 3 time.
        time     0.001s - add 1
@@ -97,5 +145,36 @@ public class SecondMinuteHourCounterTest extends TestCase {
     // all increments out of the 1h window.
     timer.setTime(7200000);
     assert counter.getLastHourCnt() == 0;
+  }
+
+  public void testOneBucket() {
+     TestTimer timer = new TestTimer(0);
+     SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "One bucket", 1L);
+     
+     counter.increment();
+
+     // The counter discards data when it's more than one bucket away from our window. 
+     // In this test case we have one bucket, so our window size is equal to our bucket size.
+     // Because of this we have to be at least 2 seconds away to discard old data.
+     timer.setTime(1999);
+     assert counter.getLastSecondCnt() == 1;
+     timer.setTime(2000);
+     assert counter.getLastSecondCnt() == 0;
+
+     timer.setTime(119000);
+     assert counter.getLastMinuteCnt() == 1;
+     timer.setTime(120000);
+     assert counter.getLastMinuteCnt() == 0;
+  }
+
+  public void testFourBuckets() {
+     TestTimer timer = new TestTimer(0);
+     SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "Four buckets", 4L);
+
+     counter.increment();
+     timer.setTime(1249);
+     assert counter.getLastSecondCnt() == 1;
+     timer.setTime(1250);
+     assert counter.getLastSecondCnt() == 0;
   }
 }

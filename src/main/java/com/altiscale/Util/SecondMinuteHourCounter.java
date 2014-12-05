@@ -8,9 +8,12 @@
  * This class is usefull in server side debugging and performance analysis. For example we can use
  * it to keep counters for how many requests are handled by a web server or for measuring the
  * throughput of a network transfer.
+ *
+ * The methods used are increment and incrementBy, they aren't very light weight so using them
+ * in a tight loop might slow performance. The use case for increment is somewhat infrequent requests
+ * up to 1000 per second. When we need faster increments we use the incrementBy to do it in bulk.
 **/
 
-//TODO(cosmin) to add unittests ASAP
 //TODO(cosmin) to add java style comments ASAP
 
 package com.altiscale.Util;
@@ -64,11 +67,12 @@ class SlidingWindowCounter {
     }
   }
 
-  public SlidingWindowCounter(AltiTimer timer, int numBuckets, long windowSize) {
+  public SlidingWindowCounter(AltiTimer timer, long numBuckets, long windowSize) {
     this.timer = timer;
     this.numBuckets = numBuckets;
     this.windowSize = windowSize;
     // we assume windowSize is a multiple of numBuckets
+    assert windowSize % numBuckets == 0;
     this.bucketSize = windowSize / numBuckets;
     this.buckets = new ArrayDeque<Pair>();
   }
@@ -105,14 +109,25 @@ public class SecondMinuteHourCounter {
 
   private SlidingWindowCounter secondCounter, minuteCounter, hourCounter;
   private long totalCounter;
+  private long numBuckets;
   private String name;
 
   public SecondMinuteHourCounter(AltiTimer timer, String name) {
     this.name = name;
     this.totalCounter = 0;
+    this.numBuckets = 1000;
     this.secondCounter = new SlidingWindowCounter(timer, 1000, 1000);
     this.minuteCounter = new SlidingWindowCounter(timer, 1000, 60 * 1000);
     this.hourCounter = new SlidingWindowCounter(timer, 1000, 60 * 60 * 1000);
+  }
+
+  public SecondMinuteHourCounter(AltiTimer timer, String name, Long numBuckets) {
+    this.name = name;
+    this.totalCounter = 0;
+    this.numBuckets = numBuckets;
+    this.secondCounter = new SlidingWindowCounter(timer, numBuckets, 1000);
+    this.minuteCounter = new SlidingWindowCounter(timer, numBuckets, 60 * 1000);
+    this.hourCounter = new SlidingWindowCounter(timer, numBuckets, 60 * 60 * 1000);
   }
 
   public synchronized void increment() {
