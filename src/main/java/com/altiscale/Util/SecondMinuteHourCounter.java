@@ -13,7 +13,17 @@
 //TODO(cosmin) to add unittests ASAP
 //TODO(cosmin) to add java style comments ASAP
 
+package com.altiscale.Util;
+
 import java.util.ArrayDeque;
+import java.util.Iterator;
+
+class AltiTimer {
+  /** This class wraps System.currentTimeMillis. It's useful for testing. */
+  public long currentTimeMillis() {
+    return System.currentTimeMillis();
+  }
+}
 
 class SlidingWindowCounter {
   /** This class implements a sparse sliding window using a set of buckets kept in a Deque.
@@ -25,6 +35,7 @@ class SlidingWindowCounter {
   private long numBuckets;
   private long bucketSize;
   private long windowSize;
+  private AltiTimer timer;
 
   class Pair {
     /** This class implements a pair needed in our sparse sliding window implementation.
@@ -53,7 +64,8 @@ class SlidingWindowCounter {
     }
   }
 
-  public SlidingWindowCounter(int numBuckets, long windowSize) {
+  public SlidingWindowCounter(AltiTimer timer, int numBuckets, long windowSize) {
+    this.timer = timer;
     this.numBuckets = numBuckets;
     this.windowSize = windowSize;
     // we assume windowSize is a multiple of numBuckets
@@ -64,7 +76,7 @@ class SlidingWindowCounter {
   public void incrementBy(long amount) {
     removeOutdatedBuckets();
     counter += amount;
-    long bucketTimestamp = System.currentTimeMillis() / bucketSize;
+    long bucketTimestamp = timer.currentTimeMillis() / bucketSize;
     if (buckets.size() > 0 && buckets.getLast().getTimestamp() == bucketTimestamp) {
       buckets.getLast().incCount(amount);
     } else {
@@ -79,7 +91,7 @@ class SlidingWindowCounter {
 
   /** This method lazily deletes buckets that are no longer within the sliding window */
   private void removeOutdatedBuckets() {
-    long bucketTimestamp = System.currentTimeMillis() / bucketSize;
+    long bucketTimestamp = timer.currentTimeMillis() / bucketSize;
     while (buckets.size() > 0 &&
            buckets.getFirst().getTimestamp() * bucketSize <
                bucketTimestamp * bucketSize - windowSize) {
@@ -95,12 +107,12 @@ public class SecondMinuteHourCounter {
   private long totalCounter;
   private String name;
 
-  public SecondMinuteHourCounter(String name) {
+  public SecondMinuteHourCounter(AltiTimer timer, String name) {
     this.name = name;
     this.totalCounter = 0;
-    this.secondCounter = new SlidingWindowCounter(1000, 1000);
-    this.minuteCounter = new SlidingWindowCounter(1000, 60 * 1000);
-    this.hourCounter = new SlidingWindowCounter(1000, 60 * 60 * 1000);
+    this.secondCounter = new SlidingWindowCounter(timer, 1000, 1000);
+    this.minuteCounter = new SlidingWindowCounter(timer, 1000, 60 * 1000);
+    this.hourCounter = new SlidingWindowCounter(timer, 1000, 60 * 60 * 1000);
   }
 
   public synchronized void increment() {
