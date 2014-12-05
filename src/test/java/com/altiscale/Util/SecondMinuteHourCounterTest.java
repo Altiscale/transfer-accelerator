@@ -68,13 +68,13 @@ public class SecondMinuteHourCounterTest extends TestCase {
 
     counter.increment();
 
-    timer.setTime(60000);
+    timer.setTime(60 * 1000 - 1);
     assert counter.getLastMinuteCnt() == 1;
 
-    timer.setTime(60059);
+    timer.setTime(60 * 1000);
     assert counter.getLastMinuteCnt() == 1;
 
-    timer.setTime(60060);
+    timer.setTime(60 * 1000 + 1);
     assert counter.getLastMinuteCnt() == 0;
   }
 
@@ -84,13 +84,13 @@ public class SecondMinuteHourCounterTest extends TestCase {
   
     counter.increment();
 
-    timer.setTime(3600000);
+    timer.setTime(60 * 60 * 1000 - 1);
     assert counter.getLastHourCnt() == 1;
 
-    timer.setTime(3603590);
+    timer.setTime(60 * 60 * 1000);
     assert counter.getLastHourCnt() == 1;
 
-    timer.setTime(3603600);
+    timer.setTime(60 * 60 * 1000 + 1);
     assert counter.getLastHourCnt() == 0;
   }
 
@@ -125,26 +125,26 @@ public class SecondMinuteHourCounterTest extends TestCase {
     assert counter.getLastSecondCnt() == 0;
     
     // third increment
-    timer.setTime(60000);
+    timer.setTime(60 * 1000);
     counter.incrementBy(10000);
 
     // all three increments are in the 1min window.
     assert counter.getLastMinuteCnt() == 10101;
-
+    
     // first increment out of the 1min window
-    timer.setTime(60500);
+    timer.setTime(60 * 1000 + 1);
     assert counter.getLastMinuteCnt() == 10100;
     
     // all increments in the 1h window.
-    timer.setTime(3600000);
+    timer.setTime(60 * 60 * 1000);
     assert counter.getLastHourCnt() == 10101;
     
     // first two increments out of the 1h window.
-    timer.setTime(3604000);
+    timer.setTime(60 * 60 * 1000 + 4000);
     assert counter.getLastHourCnt() == 10000;
 
     // all increments out of the 1h window.
-    timer.setTime(7200000);
+    timer.setTime(2 * 60 * 60 * 1000);
     assert counter.getLastHourCnt() == 0;
   }
 
@@ -154,17 +154,18 @@ public class SecondMinuteHourCounterTest extends TestCase {
      
      counter.increment();
 
-     // The counter discards data when it's more than one bucket away from our window. 
-     // In this test case we have one bucket, so our window size is equal to our bucket size.
-     // Because of this we have to be at least 2 seconds away to discard old data.
-     timer.setTime(1999);
+     timer.setTime(999);
      assert counter.getLastSecondCnt() == 1;
-     timer.setTime(2000);
+     timer.setTime(1000);
+     assert counter.getLastSecondCnt() == 1;
+     timer.setTime(1001);
      assert counter.getLastSecondCnt() == 0;
-
-     timer.setTime(119000);
+     
+     timer.setTime(60 * 1000 - 1);
      assert counter.getLastMinuteCnt() == 1;
-     timer.setTime(120000);
+     timer.setTime(60 * 1000);
+     assert counter.getLastMinuteCnt() == 1;
+     timer.setTime(60 * 1000 + 1);
      assert counter.getLastMinuteCnt() == 0;
   }
 
@@ -173,9 +174,13 @@ public class SecondMinuteHourCounterTest extends TestCase {
      SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "Four buckets", 4L);
 
      counter.increment();
-     timer.setTime(1249);
-     assert counter.getLastSecondCnt() == 1;
-     timer.setTime(1250);
+     timer.setTime(249);
+     counter.increment();
+
+     // first two increments are fall into the [0..250) bucket
+     timer.setTime(1000);
+     assert counter.getLastSecondCnt() == 2;
+     timer.setTime(1001);
      assert counter.getLastSecondCnt() == 0;
   }
 }

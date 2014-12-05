@@ -95,10 +95,11 @@ class SlidingWindowCounter {
 
   /** This method lazily deletes buckets that are no longer within the sliding window */
   private void removeOutdatedBuckets() {
-    long bucketTimestamp = timer.currentTimeMillis() / bucketSize;
+    long currentTime = timer.currentTimeMillis();
+    long bucketTimestamp = currentTime / bucketSize;
     while (buckets.size() > 0 &&
            buckets.getFirst().getTimestamp() * bucketSize <
-               bucketTimestamp * bucketSize - windowSize) {
+             currentTime - windowSize) {
       counter -= buckets.getFirst().getCount();
       buckets.removeFirst();
     }
