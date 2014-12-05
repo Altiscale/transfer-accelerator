@@ -21,7 +21,8 @@ class TestTimer extends AltiTimer {
    public void setTime(long time) {
      this.time = time;
    }
-
+   
+   @Override
    public long currentTimeMillis() {
      return time;
    }
