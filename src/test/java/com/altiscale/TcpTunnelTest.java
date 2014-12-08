@@ -18,6 +18,8 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import com.altiscale.Util.SecondMinuteHourCounter;
+
 /**
  * Unittests for TcpTunnel.
  */
@@ -114,7 +116,11 @@ public class TcpTunnelTest extends TestCase {
 
       // Start test client and test server.
       TcpProxyServer proxy = new TcpProxyServer();
-      TcpTunnel tunnel = new TcpTunnel(proxy, client, server);
+      TcpTunnel tunnel = new TcpTunnel(client, server, 
+                                       new SecondMinuteHourCounter("test server counter"),
+                                       new SecondMinuteHourCounter("test server counter"),
+                                       new SecondMinuteHourCounter("test server counter")
+                                      );
       tunnel.spawnTunnelThreads();
       while (!client.isClosed() || !server.isClosed()) {
         Thread.yield();

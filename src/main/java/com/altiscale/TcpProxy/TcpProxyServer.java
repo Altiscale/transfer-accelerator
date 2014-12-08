@@ -37,7 +37,6 @@ public class TcpProxyServer {
     public String toString() {
       return "" + host + ":" + port;
     }
-
   }
 
   protected class ProxyConfiguration {
@@ -68,6 +67,23 @@ public class TcpProxyServer {
       openedCnt = new SecondMinuteHourCounter("openedCnt " + hostPort.toString());
       closedCnt = new SecondMinuteHourCounter("closedCnt " + hostPort.toString());
       byteRateCnt = new SecondMinuteHourCounter("byteRateCnt " + hostPort.toString());
+    }
+
+    public SecondMinuteHourCounter getByteRateCnt() {
+      return byteRateCnt;
+    }
+
+    public void establishTunnel(Socket clientSocket) throws java.io.IOException {
+      requestCnt.increment();
+      Socket serverSocket = new Socket(hostPort.host, hostPort.port);
+      LOG.info("Setting tunnel between [" +
+          clientSocket.getInetAddress().getHostAddress() + ":" +
+          clientSocket.getPort() + "] and server [" +
+          hostPort.host + ":" + hostPort.port + "]");
+      TcpTunnel tunnel = new TcpTunnel(clientSocket, serverSocket, byteRateCnt, openedCnt, closedCnt);
+
+      // Create threads that will handle this tunnel.
+      tunnel.spawnTunnelThreads();
     }
   }
 
@@ -121,27 +137,17 @@ public class TcpProxyServer {
     return serverList.get(nextServerId);
   }
 
-  public TcpTunnel setupTunnel(Socket clientSocket) {
+  public void setupTunnel(Socket clientSocket) {
     final int RETRY_MAX = 3;
-    TcpTunnel tunnel = null;
     for (int i = 0; i < RETRY_MAX; i++) {
       Server server = getRoundRobinServer();
       try {
-        Socket serverSocket = new Socket(server.hostPort.host, server.hostPort.port);
-        LOG.info("Setting tunnel between [" +
-            clientSocket.getInetAddress().getHostAddress() + ":" +
-            clientSocket.getPort() + "] and server [" +
-            server.hostPort.host + ":" + server.hostPort.port + "]");
-        tunnel = new TcpTunnel(this, clientSocket, serverSocket);
-        // Create threads that will handle this tunnel.
-        tunnel.spawnTunnelThreads();
-        return tunnel;
+        server.establishTunnel(clientSocket);
       } catch (IOException ioe) {
         LOG.error("Error while connecting to server " +
                   server.hostPort.host + ":" + server.hostPort.port);
       }
     }
-    return tunnel;
   }
 
   public void runListeningLoop() {
@@ -150,7 +156,7 @@ public class TcpProxyServer {
         Socket clientSocket = null;
         clientSocket = tcpProxyService.accept();
         if (null != clientSocket) {
-          TcpTunnel tunnel = setupTunnel(clientSocket);
+          setupTunnel(clientSocket);
         }
       } catch (IOException ioe) {
         LOG.error("IOException while accepting connection: " + ioe.getMessage());

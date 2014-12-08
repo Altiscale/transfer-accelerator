@@ -30,9 +30,6 @@ public class TcpTunnel {
   // log4j logger.
   private static Logger LOG = Logger.getLogger("TcpProxy");
 
-  // Proxy who created us.
-  TcpProxyServer proxy;
-
   // Socket from our client to us.
   private Socket clientSocket;
 
@@ -45,6 +42,10 @@ public class TcpTunnel {
   // Server-to-Client one-directional tunnel.
   OneDirectionTunnel serverClient;
 
+  SecondMinuteHourCounter serverByteRateCnt;
+  SecondMinuteHourCounter serverOpenedCnt;
+  SecondMinuteHourCounter serverClosedCnt;
+
   // We are just a proxy. We create two pipes, proxy all data and whoever closes the
   // connection first our job is to simply close the other end as well.
   protected class OneDirectionTunnel implements Runnable {
@@ -55,6 +56,9 @@ public class TcpTunnel {
     private Socket destinationSocket;
 
     private SecondMinuteHourCounter byteRateCnt;
+    private SecondMinuteHourCounter serverByteRateCnt;
+    private SecondMinuteHourCounter serverOpenedCnt;
+    private SecondMinuteHourCounter serverClosedCnt;
 
     /**
      *  OneDirectionalTunnel is responsible for reading on its source socket and writing
@@ -63,13 +67,20 @@ public class TcpTunnel {
      *  @param source       Socket from which we read data
      *  @param destination  Socket to which we write data
      *  @param name         Thread name for the thread we'll create when started.
+     *  @param serverByteRateCnt counter that is passed by the server used for aggregating byte rates by server.
      */
-    public OneDirectionTunnel(Socket source, Socket destination, String name) {
+    public OneDirectionTunnel(Socket source, Socket destination, String name,
+                              SecondMinuteHourCounter serverByteRateCnt,
+                              SecondMinuteHourCounter serverOpenedCnt,
+                              SecondMinuteHourCounter serverClosedCnt) {
       threadName = name;
       thread = null;
       sourceSocket = source;
       destinationSocket = destination;
       byteRateCnt = new SecondMinuteHourCounter(name + " byteRateCnt");
+      this.serverByteRateCnt = serverByteRateCnt;
+      this.serverOpenedCnt = serverOpenedCnt;
+      this.serverClosedCnt = serverClosedCnt;
     }
 
     /*
@@ -99,6 +110,7 @@ public class TcpTunnel {
         LOG.error("Could not open input or output stream.");
         return;
       }
+      serverOpenedCnt.increment();
       int cnt = 0;
       byte[] buffer = new byte[1024 * 8];  // 8KB buffer.
       try {
@@ -112,6 +124,7 @@ public class TcpTunnel {
 
             // performance problems?
             byteRateCnt.incrementBy(cnt);
+            serverByteRateCnt.incrementBy(cnt);
 
             // We don't want to buffer too much in the proxy. So, flush the output.
             // TODO(zoran): this might cause some performance issues. Experiment with
@@ -125,35 +138,48 @@ public class TcpTunnel {
       // Either the input stream is closed or we got an exception. Either way, close the
       // sockets since we're done with this tunnel.
       try {
-        if (!sourceSocket.isClosed()) {
-          sourceSocket.close();
-        }
-        if (!destinationSocket.isClosed()) {
-          destinationSocket.close();
-        }
+        closeConnection();
+        serverClosedCnt.increment();
       } catch (IOException ioe) {
         LOG.error("IO exception while closing sockets in thread [" + threadName +
             "]: " + ioe.getMessage());
       }
+
       LOG.info(byteRateCnt.toString());
+
       LOG.info("Exiting thread [" + threadName + "]");
+    }
+
+    public void closeConnection() throws IOException {
+      if (!sourceSocket.isClosed()) {
+        sourceSocket.close();
+      }
+      if (!destinationSocket.isClosed()) {
+        destinationSocket.close();
+      }
     }
   }
 
   /*
    *  TcpTunnel creates two pipes, connecting client and server in both directions.
    *
-   *  @param  proxy   TcpProxyServer so we can access its methods for maintaining statistics.
    *  @param  client  Socket connected to our client
    *  @param  server  Socket connected to server selected for this client by proxy
    */
-  public TcpTunnel(TcpProxyServer proxy, Socket client, Socket server) {
+  public TcpTunnel(Socket client, Socket server,
+                   SecondMinuteHourCounter serverByteRateCnt,
+                   SecondMinuteHourCounter serverOpenedCnt,
+                   SecondMinuteHourCounter serverClosedCnt
+                   ) {
+    this.serverByteRateCnt = serverByteRateCnt;
+    this.serverOpenedCnt = serverOpenedCnt;
+    this.serverClosedCnt = serverClosedCnt;
     clientSocket = client;
     serverSocket = server;
 
     // Create two one-directional tunnels to connect both pipes.
-    clientServer = new OneDirectionTunnel(clientSocket, serverSocket, "clientServer");
-    serverClient = new OneDirectionTunnel(serverSocket, clientSocket, "serverClient");
+    clientServer = new OneDirectionTunnel(clientSocket, serverSocket, "clientServer", serverByteRateCnt, serverOpenedCnt, serverClosedCnt);
+    serverClient = new OneDirectionTunnel(serverSocket, clientSocket, "serverClient", serverByteRateCnt, serverOpenedCnt, serverClosedCnt);
   }
 
   /*
@@ -163,14 +189,5 @@ public class TcpTunnel {
     // Start both of them in their own threads.
     clientServer.start();
     serverClient.start();
-  }
-
-  /*
-   *  Returns whether our tunnel is closed.
-   *
-   *  @return  True if both sockets are closed. False otherwise.
-   */
-  public boolean isClosed() {
-    return clientSocket.isClosed() && serverSocket.isClosed();
   }
 }
