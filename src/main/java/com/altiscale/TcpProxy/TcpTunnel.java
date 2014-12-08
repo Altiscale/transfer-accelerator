@@ -24,6 +24,8 @@ import java.lang.Thread;
 import java.net.Socket;
 import java.util.ArrayList;
 
+import com.altiscale.Util.SecondMinuteHourCounter;
+
 public class TcpTunnel {
   // log4j logger.
   private static Logger LOG = Logger.getLogger("TcpProxy");
@@ -52,6 +54,8 @@ public class TcpTunnel {
     private Socket sourceSocket;
     private Socket destinationSocket;
 
+    private SecondMinuteHourCounter byteRateCnt;
+
     /**
      *  OneDirectionalTunnel is responsible for reading on its source socket and writing
      *  all data to its destination socket. It is blocking, so it runs in its own thread.
@@ -65,6 +69,7 @@ public class TcpTunnel {
       thread = null;
       sourceSocket = source;
       destinationSocket = destination;
+      byteRateCnt = new SecondMinuteHourCounter(name + " byteRateCnt");
     }
 
     /*
@@ -98,11 +103,15 @@ public class TcpTunnel {
       byte[] buffer = new byte[1024 * 8];  // 8KB buffer.
       try {
         do {
+
           // Read some data.
           cnt = input.read(buffer);
 
           if (cnt > 0) {
             output.write(buffer, 0, cnt);
+
+            // performance problems?
+            byteRateCnt.incrementBy(cnt);
 
             // We don't want to buffer too much in the proxy. So, flush the output.
             // TODO(zoran): this might cause some performance issues. Experiment with
@@ -126,6 +135,7 @@ public class TcpTunnel {
         LOG.error("IO exception while closing sockets in thread [" + threadName +
             "]: " + ioe.getMessage());
       }
+      LOG.info(byteRateCnt.toString());
       LOG.info("Exiting thread [" + threadName + "]");
     }
   }

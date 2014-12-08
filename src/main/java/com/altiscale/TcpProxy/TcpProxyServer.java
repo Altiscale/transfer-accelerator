@@ -21,27 +21,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import com.altiscale.Util.SecondMinuteHourCounter;
 
 public class TcpProxyServer {
-
-  // TODO(zoran): this is a very common util method. Either find appropriate Hadoop method
-  // or make it a class so we can use it in all hadoop open-source code.
-  // TODO(zoran): this is just a simple "stub" - I still need to write it. And it must be
-  // in its own class.
-  class SecondMinuteHourCount {
-    private long cnt;
-
-    public SecondMinuteHourCount() {
-      cnt = 0;
-    }
-
-    public void inc() {
-      cnt++;
-    }
-    public long getCnt() {
-      return cnt;
-    }
-  }
 
   protected class HostPort {
     String host;
@@ -51,6 +33,11 @@ public class TcpProxyServer {
       this.host = host;
       this.port = port;
     }
+
+    public String toString() {
+      return "" + host + ":" + port;
+    }
+
   }
 
   protected class ProxyConfiguration {
@@ -70,17 +57,17 @@ public class TcpProxyServer {
   protected class Server {
     HostPort hostPort;
 
-    SecondMinuteHourCount requestCnt;
-    SecondMinuteHourCount openedCnt;
-    SecondMinuteHourCount closedCnt;
-    SecondMinuteHourCount byteRateCnt;
+    SecondMinuteHourCounter requestCnt;
+    SecondMinuteHourCounter openedCnt;
+    SecondMinuteHourCounter closedCnt;
+    SecondMinuteHourCounter byteRateCnt;
 
     public Server(HostPort hostPort) {
       this.hostPort = hostPort;
-      requestCnt = new SecondMinuteHourCount();
-      openedCnt = new SecondMinuteHourCount();
-      closedCnt = new SecondMinuteHourCount();
-      byteRateCnt = new SecondMinuteHourCount();
+      requestCnt = new SecondMinuteHourCounter("requestCnt " + hostPort.toString());
+      openedCnt = new SecondMinuteHourCounter("openedCnt " + hostPort.toString());
+      closedCnt = new SecondMinuteHourCounter("closedCnt " + hostPort.toString());
+      byteRateCnt = new SecondMinuteHourCounter("byteRateCnt " + hostPort.toString());
     }
   }
 

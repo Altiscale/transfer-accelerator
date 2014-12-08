@@ -113,13 +113,12 @@ public class SecondMinuteHourCounter {
   private long numBuckets;
   private String name;
 
+  public SecondMinuteHourCounter(String name) {
+    this(new AltiTimer(), name, 1000L);
+  }
+
   public SecondMinuteHourCounter(AltiTimer timer, String name) {
-    this.name = name;
-    this.totalCounter = 0;
-    this.numBuckets = 1000;
-    this.secondCounter = new SlidingWindowCounter(timer, 1000, 1000);
-    this.minuteCounter = new SlidingWindowCounter(timer, 1000, 60 * 1000);
-    this.hourCounter = new SlidingWindowCounter(timer, 1000, 60 * 60 * 1000);
+    this(timer, name, 1000L);
   }
 
   public SecondMinuteHourCounter(AltiTimer timer, String name, Long numBuckets) {
@@ -156,5 +155,13 @@ public class SecondMinuteHourCounter {
 
   public synchronized long getTotalCnt() {
     return totalCounter;
+  }
+
+  public String toString() {
+    return name +
+           " getLastSecondCnt: " + getLastSecondCnt() +
+           " getLastMinuteCnt: " + getLastMinuteCnt() +
+           " getLastHourCnt: " + getLastHourCnt() +
+           " total: " + getTotalCnt();
   }
 }
