@@ -44,10 +44,6 @@ public class TcpTunnel {
 
   private TcpProxyServer.Server server;
 
-  SecondMinuteHourCounter serverByteRateCnt;
-  SecondMinuteHourCounter serverOpenedCnt;
-  SecondMinuteHourCounter serverClosedCnt;
-
   // We are just a proxy. We create two pipes, proxy all data and whoever closes the
   // connection first our job is to simply close the other end as well.
   protected class OneDirectionTunnel implements Runnable {
@@ -68,7 +64,7 @@ public class TcpTunnel {
      *  @param source       Socket from which we read data
      *  @param destination  Socket to which we write data
      *  @param name         Thread name for the thread we'll create when started.
-     *  @param proxyServer  Referece used byte rates/opened connections/closed connections by server.
+     *  @param proxyServer  Referece used to aggregate byte rates/opened connections/closed connections per server.
      */
     public OneDirectionTunnel(Socket source, Socket destination, String name,
                               TcpProxyServer.Server proxyServer) {
