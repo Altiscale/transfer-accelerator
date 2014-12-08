@@ -42,6 +42,8 @@ public class TcpTunnel {
   // Server-to-Client one-directional tunnel.
   OneDirectionTunnel serverClient;
 
+  private TcpProxyServer.Server server;
+
   SecondMinuteHourCounter serverByteRateCnt;
   SecondMinuteHourCounter serverOpenedCnt;
   SecondMinuteHourCounter serverClosedCnt;
@@ -56,9 +58,8 @@ public class TcpTunnel {
     private Socket destinationSocket;
 
     private SecondMinuteHourCounter byteRateCnt;
-    private SecondMinuteHourCounter serverByteRateCnt;
-    private SecondMinuteHourCounter serverOpenedCnt;
-    private SecondMinuteHourCounter serverClosedCnt;
+
+    private TcpProxyServer.Server proxyServer;
 
     /**
      *  OneDirectionalTunnel is responsible for reading on its source socket and writing
@@ -67,20 +68,16 @@ public class TcpTunnel {
      *  @param source       Socket from which we read data
      *  @param destination  Socket to which we write data
      *  @param name         Thread name for the thread we'll create when started.
-     *  @param serverByteRateCnt counter that is passed by the server used for aggregating byte rates by server.
+     *  @param proxyServer  Referece used byte rates/opened connections/closed connections by server.
      */
     public OneDirectionTunnel(Socket source, Socket destination, String name,
-                              SecondMinuteHourCounter serverByteRateCnt,
-                              SecondMinuteHourCounter serverOpenedCnt,
-                              SecondMinuteHourCounter serverClosedCnt) {
+                              TcpProxyServer.Server proxyServer) {
       threadName = name;
       thread = null;
       sourceSocket = source;
       destinationSocket = destination;
       byteRateCnt = new SecondMinuteHourCounter(name + " byteRateCnt");
-      this.serverByteRateCnt = serverByteRateCnt;
-      this.serverOpenedCnt = serverOpenedCnt;
-      this.serverClosedCnt = serverClosedCnt;
+      this.proxyServer = proxyServer;
     }
 
     /*
@@ -110,7 +107,7 @@ public class TcpTunnel {
         LOG.error("Could not open input or output stream.");
         return;
       }
-      serverOpenedCnt.increment();
+      proxyServer.incrementOpenedConn();
       int cnt = 0;
       byte[] buffer = new byte[1024 * 8];  // 8KB buffer.
       try {
@@ -122,9 +119,9 @@ public class TcpTunnel {
           if (cnt > 0) {
             output.write(buffer, 0, cnt);
 
-            // performance problems?
+            // TODO(cosmin) check if this slows things down.
             byteRateCnt.incrementBy(cnt);
-            serverByteRateCnt.incrementBy(cnt);
+            proxyServer.incrementByteRateBy(cnt);
 
             // We don't want to buffer too much in the proxy. So, flush the output.
             // TODO(zoran): this might cause some performance issues. Experiment with
@@ -139,7 +136,7 @@ public class TcpTunnel {
       // sockets since we're done with this tunnel.
       try {
         closeConnection();
-        serverClosedCnt.increment();
+        proxyServer.incrementClosedConn();
       } catch (IOException ioe) {
         LOG.error("IO exception while closing sockets in thread [" + threadName +
             "]: " + ioe.getMessage());
@@ -167,19 +164,13 @@ public class TcpTunnel {
    *  @param  server  Socket connected to server selected for this client by proxy
    */
   public TcpTunnel(Socket client, Socket server,
-                   SecondMinuteHourCounter serverByteRateCnt,
-                   SecondMinuteHourCounter serverOpenedCnt,
-                   SecondMinuteHourCounter serverClosedCnt
-                   ) {
-    this.serverByteRateCnt = serverByteRateCnt;
-    this.serverOpenedCnt = serverOpenedCnt;
-    this.serverClosedCnt = serverClosedCnt;
+                   TcpProxyServer.Server proxyServer) {
     clientSocket = client;
     serverSocket = server;
 
     // Create two one-directional tunnels to connect both pipes.
-    clientServer = new OneDirectionTunnel(clientSocket, serverSocket, "clientServer", serverByteRateCnt, serverOpenedCnt, serverClosedCnt);
-    serverClient = new OneDirectionTunnel(serverSocket, clientSocket, "serverClient", serverByteRateCnt, serverOpenedCnt, serverClosedCnt);
+    clientServer = new OneDirectionTunnel(clientSocket, serverSocket, "clientServer", proxyServer);
+    serverClient = new OneDirectionTunnel(serverSocket, clientSocket, "serverClient", proxyServer);
   }
 
   /*

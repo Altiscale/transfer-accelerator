@@ -69,8 +69,16 @@ public class TcpProxyServer {
       byteRateCnt = new SecondMinuteHourCounter("byteRateCnt " + hostPort.toString());
     }
 
-    public SecondMinuteHourCounter getByteRateCnt() {
-      return byteRateCnt;
+    public void incrementOpenedConn() {
+      openedCnt.increment();
+    }
+
+    public void incrementClosedConn() {
+      closedCnt.increment();
+    }
+
+    public void incrementByteRateBy(long amount) {
+      byteRateCnt.incrementBy(amount);
     }
 
     public void establishTunnel(Socket clientSocket) throws java.io.IOException {
@@ -80,7 +88,7 @@ public class TcpProxyServer {
           clientSocket.getInetAddress().getHostAddress() + ":" +
           clientSocket.getPort() + "] and server [" +
           hostPort.host + ":" + hostPort.port + "]");
-      TcpTunnel tunnel = new TcpTunnel(clientSocket, serverSocket, byteRateCnt, openedCnt, closedCnt);
+      TcpTunnel tunnel = new TcpTunnel(clientSocket, serverSocket, this);
 
       // Create threads that will handle this tunnel.
       tunnel.spawnTunnelThreads();
