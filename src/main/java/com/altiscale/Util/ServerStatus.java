@@ -1,3 +1,11 @@
+/**
+* Copyright Altiscale 2014
+* Author: Cosmin Negruseri <cosmin@altiscale.com>
+*
+* ServerStatus is a Runnable that listens on port 1982 and returns a html page with values
+* from getServerStats.
+*/
+
 package com.altiscale.Util;
 
 import org.apache.log4j.Logger;
@@ -21,6 +29,7 @@ public class ServerStatus implements Runnable {
   public ServerStatus(ServerWithStats server) {
     this.server = server;
   }
+
   @Override
   public void run() {
     try {
@@ -60,7 +69,6 @@ public class ServerStatus implements Runnable {
         clientSocket.close();
       }  
     } catch (java.io.IOException e) {
-      // TODO(cosmin) fix import problem
       LOG.info("ServerStats thread died.");
     }
   }
