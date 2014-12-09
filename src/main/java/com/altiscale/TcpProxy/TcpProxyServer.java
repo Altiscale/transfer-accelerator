@@ -182,6 +182,7 @@ public class TcpProxyServer implements ServerWithStats {
       Server server = getRoundRobinServer();
       try {
         server.establishTunnel(clientSocket);
+        break;
       } catch (IOException ioe) {
         LOG.error("Error while connecting to server " +
                   server.hostPort.host + ":" + server.hostPort.port);
