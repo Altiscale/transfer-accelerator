@@ -9,8 +9,11 @@ Intended use is to open multiple ssh tunnels and then start the proxy.
 For example:
 
 ssh -f -N -L 14000:httpfs-server-name:14000 -p 22 workbench
+
 ssh -f -N -L 14001:httpfs-server-name:14000 -p 22 workbench
+
 ssh -f -N -L 14002:httpfs-server-name:14000 -p 22 workbench
+
 java -jar TcpProxy-0.0.1-SNAPSHOT-jar-with-dependencies.jar 12345 localhost 14000 localhost 14001 localhost 14002
 
 After this, you can use localhost:12345 as your HttpFS server. For example:
