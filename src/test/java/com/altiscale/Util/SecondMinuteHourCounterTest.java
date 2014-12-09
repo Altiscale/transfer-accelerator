@@ -48,7 +48,7 @@ public class SecondMinuteHourCounterTest extends TestCase {
 
   public void testExpireAfterOneSecond() {
     TestTimer timer = new TestTimer(0);
-    SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "Test Counter");
+    SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "Test Counter", 1000L);
 
     counter.increment();
 
@@ -64,7 +64,7 @@ public class SecondMinuteHourCounterTest extends TestCase {
 
   public void testExpireAfterOneMinute() {
     TestTimer timer = new TestTimer(0);
-    SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "Test Counter");
+    SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "Test Counter", 1000L);
 
     counter.increment();
 
@@ -80,7 +80,7 @@ public class SecondMinuteHourCounterTest extends TestCase {
 
   public void testExpireAfterOneHour() {
     TestTimer timer = new TestTimer(0);
-    SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "TestCounter");
+    SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "TestCounter", 1000L);
   
     counter.increment();
 
@@ -102,7 +102,7 @@ public class SecondMinuteHourCounterTest extends TestCase {
        time    60.000s - add 10000
      */
     TestTimer timer = new TestTimer(0);
-    SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "Test Counter");
+    SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "Test Counter", 1000L);
 
     // first increment
     timer.setTime(1);

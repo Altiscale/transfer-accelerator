@@ -64,7 +64,8 @@ public class TcpTunnel {
      *  @param source       Socket from which we read data
      *  @param destination  Socket to which we write data
      *  @param name         Thread name for the thread we'll create when started.
-     *  @param proxyServer  Referece used to aggregate byte rates/opened connections/closed connections per server.
+     *  @param proxyServer  Referece used to aggregate byte rates/opened connections/
+     *                      closed connections per server.
      */
     public OneDirectionTunnel(Socket source, Socket destination, String name,
                               TcpProxyServer.Server proxyServer) {

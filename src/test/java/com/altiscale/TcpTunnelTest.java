@@ -117,7 +117,7 @@ public class TcpTunnelTest extends TestCase {
       // Start test client and test server.
       TcpProxyServer proxy = new TcpProxyServer();
       TcpTunnel tunnel = new TcpTunnel(client, server,
-                                       proxy. new Server(proxy. new HostPort("host", 1111)));
+          proxy. new Server(proxy. new HostPort("host", 1111)));
       tunnel.spawnTunnelThreads();
       while (!client.isClosed() || !server.isClosed()) {
         Thread.yield();
