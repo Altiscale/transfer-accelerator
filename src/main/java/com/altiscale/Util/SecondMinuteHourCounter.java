@@ -114,11 +114,11 @@ public class SecondMinuteHourCounter {
   private String name;
 
   public SecondMinuteHourCounter(String name) {
-    this(new AltiTimer(), name, 1000L);
+    this(new AltiTimer(), name, 100L);
   }
 
   public SecondMinuteHourCounter(AltiTimer timer, String name) {
-    this(timer, name, 1000L);
+    this(timer, name, 100L);
   }
 
   public SecondMinuteHourCounter(AltiTimer timer, String name, Long numBuckets) {
