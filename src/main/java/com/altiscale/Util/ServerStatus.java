@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.Map;
 
 import com.altiscale.Util.ServerWithStats;
 
@@ -44,8 +45,15 @@ public class ServerStatus implements Runnable {
 
         out.write("HTTP/1.0 200 OK\r\n");
         out.write("\r\n");
-        out.write("<TITLE>Server Statuse</TITLE>\r\n");
-        out.write("<P>" + server.getServerStats() +  "</P>\r\n");
+        out.write("<TITLE>Server Status</TITLE>\r\n");
+
+        Map<String, String> map = server.getServerStats();
+        out.write("<table border=\"1\">\r\n");
+        out.write("<tr><td>counters</td><td>values</td></tr>\r\n");
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+          out.write("<tr><td>" + entry.getKey() + "</td><td>" + entry.getValue() + "</td></tr>\r\n");
+        }
+        out.write("</table>\r\n");
         out.flush();
         out.close();
         in.close();

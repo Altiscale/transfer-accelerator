@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.TreeMap;
+import java.util.Map;
 
 import com.altiscale.Util.SecondMinuteHourCounter;
 import com.altiscale.Util.ServerStatus;
@@ -119,7 +121,7 @@ public class TcpProxyServer implements ServerWithStats {
   private int nextServerId = 0;
 
   @Override
-  public String getServerStats() {
+  public Map<String, String> getServerStats() {
     long lastSecondByteRate = 0,
          lastMinuteByteRate = 0,
          lastHourByteRate = 0,
@@ -133,18 +135,15 @@ public class TcpProxyServer implements ServerWithStats {
       lastHourByteRate += server.byteRateCnt.getLastHourCnt();
     }
 
-    /**
+    TreeMap<String, String> map = new TreeMap<String, String>();
 
-    HashMap<String> map = new HashMap<String>();
+    map.put("oppenedConnections", "" + openedConnections);
+    map.put("closedConnections", "" + closedConnections);
+    map.put("lastSecondByteRate", "" + lastSecondByteRate);
+    map.put("lastMinuteByteRate", "" + lastMinuteByteRate);
+    map.put("lastHourByteRate", "" + lastHourByteRate);
 
-    map["oppenedConnections"] = openedConnections;
-    map["closedConnections"] = closedConnections;
-    */
-
-
-    return
-           " opened connections " + openedConnections + 
-           " closedConnections " + closedConnections;
+    return map;
   }
 
   public TcpProxyServer() {
