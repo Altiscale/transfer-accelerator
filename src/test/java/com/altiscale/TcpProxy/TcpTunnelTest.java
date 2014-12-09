@@ -19,7 +19,6 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import com.altiscale.Util.SecondMinuteHourCounter;
-
 /**
  * Unittests for TcpTunnel.
  */

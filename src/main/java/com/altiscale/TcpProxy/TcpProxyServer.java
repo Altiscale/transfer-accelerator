@@ -21,9 +21,12 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import com.altiscale.Util.SecondMinuteHourCounter;
 
-public class TcpProxyServer {
+import com.altiscale.Util.SecondMinuteHourCounter;
+import com.altiscale.Util.ServerStatus;
+import com.altiscale.Util.ServerWithStats;
+
+public class TcpProxyServer implements ServerWithStats {
 
   protected class HostPort {
     String host;
@@ -114,6 +117,35 @@ public class TcpProxyServer {
 
   // Used by round-robin load-balancing algorithm.
   private int nextServerId = 0;
+
+  @Override
+  public String getServerStats() {
+    long lastSecondByteRate = 0,
+         lastMinuteByteRate = 0,
+         lastHourByteRate = 0,
+         openedConnections = 0,
+         closedConnections = 0;
+    for (Server server : serverList) {
+      openedConnections += server.openedCnt.getTotalCnt();
+      closedConnections += server.closedCnt.getTotalCnt();
+      lastSecondByteRate += server.byteRateCnt.getLastSecondCnt();
+      lastMinuteByteRate += server.byteRateCnt.getLastMinuteCnt();
+      lastHourByteRate += server.byteRateCnt.getLastHourCnt();
+    }
+
+    /**
+
+    HashMap<String> map = new HashMap<String>();
+
+    map["oppenedConnections"] = openedConnections;
+    map["closedConnections"] = closedConnections;
+    */
+
+
+    return
+           " opened connections " + openedConnections + 
+           " closedConnections " + closedConnections;
+  }
 
   public TcpProxyServer() {
     serverList = new ArrayList<Server>();
@@ -215,6 +247,11 @@ public class TcpProxyServer {
       LOG.error("No server specified.");
       System.exit(1);
     }
+
+    LOG.info("try to start thread");
+
+    // Lauch ServerStats thread.
+    new Thread(new ServerStatus(proxy)).start();
 
     // Loop on the listen port forever.
     proxy.runListeningLoop();
