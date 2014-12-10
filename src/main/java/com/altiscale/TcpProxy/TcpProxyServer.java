@@ -148,28 +148,30 @@ public class TcpProxyServer implements ServerWithStats {
     htmlServerStats += "<table>\r\n";
     htmlServerStats += "<tr><td><b>counters</b></td><td><b>values</b></td></tr>\r\n";
 
-    htmlServerStats += "<tr><td><b>server</b> byte rate</td><td>" +
-                       "<table><tr>" +
-                       "<td>" + lastSecondByteRate + "B/s</td>" +
-                       "<td>" + lastMinuteByteRate + "B/m</td>" +
-                       "<td>" + lastHourByteRate + "B/h</td>" +
-                       "</tr></table>";
- 
-    htmlServerStats += "<tr><td>opened connections</td><td>" + openedConnections +
-                       "</td></tr>\r\n";
-    htmlServerStats += "<tr><td>closed connections</td><td>" + closedConnections +
+    htmlServerStats += "<tr><td>Open connections</td><td>" + (openedConnections - closedConnections) +
                        "</td></tr>\r\n";
 
+    htmlServerStats += "<tr><td><b>server</b> byte rate</td><td>" +
+                       "<table><tr>" +
+                       "<td>" + lastSecondByteRate + " B/s</td>" +
+                       "<td>" + lastMinuteByteRate + " B/min</td>" +
+                       "<td>" + lastHourByteRate + " B/h</td>" +
+                       "</tr></table>";
+ 
     for (Server server : serverList) {
       htmlServerStats += "<tr><td><b>" + server.hostPort.toString() + "</b> byte rate </td><td>" +
                          "<table><tr>" +
-                         "<td>" + server.byteRateCnt.getLastSecondCnt() + "B/s</td>" +
-                         "<td>" + server.byteRateCnt.getLastMinuteCnt() + "B/m</td>" +
-                         "<td>" + server.byteRateCnt.getLastHourCnt() + "B/h</td>" +
+                         "<td>" + server.byteRateCnt.getLastSecondCnt() + " B/s</td>" +
+                         "<td>" + server.byteRateCnt.getLastMinuteCnt() + " B/min</td>" +
+                         "<td>" + server.byteRateCnt.getLastHourCnt() + " B/h</td>" +
                          "</tr></table>" +
                          "</td></tr>\r\n";
     }
 
+    htmlServerStats += "<tr><td>opened connections</td><td>" + openedConnections +
+                       "</td></tr>\r\n";
+    htmlServerStats += "<tr><td>closed connections</td><td>" + closedConnections +
+                       "</td></tr>\r\n";
     htmlServerStats += "</table>\r\n";
 
     return htmlServerStats;
