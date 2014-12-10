@@ -55,18 +55,8 @@ public class ServerStatus implements Runnable {
           }
         }
 
-        out.write("HTTP/1.0 200 OK\r\n");
-        out.write("\r\n");
-        out.write("<head><meta http-equiv=\"refresh\" content=\"5\" /></head>\r\n");
-        out.write("<TITLE>" + server.getServerName() + " Status</TITLE>\r\n");
+        out.write(server.getServerStatsHtml());
 
-        Map<String, String> map = server.getServerStats();
-        out.write("<table border=\"1\">\r\n");
-        out.write("<tr><td>counters</td><td>values</td></tr>\r\n");
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-          out.write("<tr><td>" + entry.getKey() + "</td><td>" + entry.getValue() + "</td></tr>\r\n");
-        }
-        out.write("</table>\r\n");
         out.flush();
         out.close();
         in.close();

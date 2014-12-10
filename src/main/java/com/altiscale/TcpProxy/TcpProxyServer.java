@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.TreeMap;
-import java.util.Map;
 
 import com.altiscale.Util.SecondMinuteHourCounter;
 import com.altiscale.Util.ServerStatus;
@@ -123,7 +121,7 @@ public class TcpProxyServer implements ServerWithStats {
   private String name;
 
   @Override
-  public Map<String, String> getServerStats() {
+  public String getServerStatsHtml() {
     long lastSecondByteRate = 0;
     long lastMinuteByteRate = 0;
     long lastHourByteRate = 0;
@@ -137,15 +135,44 @@ public class TcpProxyServer implements ServerWithStats {
       lastHourByteRate += server.byteRateCnt.getLastHourCnt();
     }
 
-    TreeMap<String, String> map = new TreeMap<String, String>();
+    String htmlServerStats = "";
+    htmlServerStats += "HTTP/1.0 200 OK\r\n";
+    htmlServerStats += "\r\n";
+    htmlServerStats += "<head><meta http-equiv=\"refresh\" content=\"5\" /></head>\r\n";
+    htmlServerStats += "<style> table, th, td { padding: 3px; border: 1px solid black;" +
+                       " border-collapse: collapse; text-align: right;} </style>\r\n";
+    htmlServerStats += "<TITLE>" + getServerName() + " Status</TITLE>\r\n";
 
-    map.put("Opened Connections", "" + openedConnections);
-    map.put("Closed Connections", "" + closedConnections);
-    map.put("byte rate - last second", "" + lastSecondByteRate);
-    map.put("byte rate - last minute", "" + lastMinuteByteRate);
-    map.put("byte rate - last hour", "" + lastHourByteRate);
+    htmlServerStats += "<b>" + getServerName() + "</b> - " + tcpProxyPort + "<br/><br/><br/>\r\n";
 
-    return map;
+    htmlServerStats += "<table>\r\n";
+    htmlServerStats += "<tr><td><b>counters</b></td><td><b>values</b></td></tr>\r\n";
+
+    htmlServerStats += "<tr><td><b>server</b> byte rate</td><td>" +
+                       "<table><tr>" +
+                       "<td>" + lastSecondByteRate + "B/s</td>" +
+                       "<td>" + lastMinuteByteRate + "B/m</td>" +
+                       "<td>" + lastHourByteRate + "B/h</td>" +
+                       "</tr></table>";
+ 
+    htmlServerStats += "<tr><td>opened connections</td><td>" + openedConnections +
+                       "</td></tr>\r\n";
+    htmlServerStats += "<tr><td>closed connections</td><td>" + closedConnections +
+                       "</td></tr>\r\n";
+
+    for (Server server : serverList) {
+      htmlServerStats += "<tr><td><b>" + server.hostPort.toString() + "</b> byte rate </td><td>" +
+                         "<table><tr>" +
+                         "<td>" + server.byteRateCnt.getLastSecondCnt() + "B/s</td>" +
+                         "<td>" + server.byteRateCnt.getLastMinuteCnt() + "B/m</td>" +
+                         "<td>" + server.byteRateCnt.getLastHourCnt() + "B/h</td>" +
+                         "</tr></table>" +
+                         "</td></tr>\r\n";
+    }
+
+    htmlServerStats += "</table>\r\n";
+
+    return htmlServerStats;
   }
 
   public TcpProxyServer(String name) {
