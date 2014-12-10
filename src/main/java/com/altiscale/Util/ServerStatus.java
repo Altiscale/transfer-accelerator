@@ -57,6 +57,7 @@ public class ServerStatus implements Runnable {
 
         out.write("HTTP/1.0 200 OK\r\n");
         out.write("\r\n");
+        out.write("<head><meta http-equiv=\"refresh\" content=\"5\" /></head>\r\n");
         out.write("<TITLE>" + server.getServerName() + " Status</TITLE>\r\n");
 
         Map<String, String> map = server.getServerStats();
