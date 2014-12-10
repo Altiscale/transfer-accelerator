@@ -120,13 +120,15 @@ public class TcpProxyServer implements ServerWithStats {
   // Used by round-robin load-balancing algorithm.
   private int nextServerId = 0;
 
+  private String name;
+
   @Override
   public Map<String, String> getServerStats() {
-    long lastSecondByteRate = 0,
-         lastMinuteByteRate = 0,
-         lastHourByteRate = 0,
-         openedConnections = 0,
-         closedConnections = 0;
+    long lastSecondByteRate = 0;
+    long lastMinuteByteRate = 0;
+    long lastHourByteRate = 0;
+    long openedConnections = 0;
+    long closedConnections = 0;
     for (Server server : serverList) {
       openedConnections += server.openedCnt.getTotalCnt();
       closedConnections += server.closedCnt.getTotalCnt();
@@ -137,16 +139,17 @@ public class TcpProxyServer implements ServerWithStats {
 
     TreeMap<String, String> map = new TreeMap<String, String>();
 
-    map.put("oppenedConnections", "" + openedConnections);
-    map.put("closedConnections", "" + closedConnections);
-    map.put("lastSecondByteRate", "" + lastSecondByteRate);
-    map.put("lastMinuteByteRate", "" + lastMinuteByteRate);
-    map.put("lastHourByteRate", "" + lastHourByteRate);
+    map.put("Opened Connections", "" + openedConnections);
+    map.put("Closed Connections", "" + closedConnections);
+    map.put("byte rate - last second", "" + lastSecondByteRate);
+    map.put("byte rate - last minute", "" + lastMinuteByteRate);
+    map.put("byte rate - last hour", "" + lastHourByteRate);
 
     return map;
   }
 
-  public TcpProxyServer() {
+  public TcpProxyServer(String name) {
+    this.name = name;
     serverList = new ArrayList<Server>();
   }
 
@@ -208,8 +211,12 @@ public class TcpProxyServer implements ServerWithStats {
     return "Usage: tcpProxy <proxyPort> [<server_name> <server_port>]+";
   }
 
+  public String getServerName() {
+    return name;
+  }
+
   public static void main (String[] args) {
-    TcpProxyServer proxy = new TcpProxyServer();
+    TcpProxyServer proxy = new TcpProxyServer("TcpProxy");
 
     // TODO(zoran): add command line arguments using Apache Commons CLI.
     // TODO(zoran): enable users to specify one hostname and multiple ports.
@@ -248,10 +255,8 @@ public class TcpProxyServer implements ServerWithStats {
       System.exit(1);
     }
 
-    LOG.info("try to start thread");
-
     // Lauch ServerStats thread.
-    new Thread(new ServerStatus(proxy)).start();
+    new Thread(new ServerStatus(proxy, 1982)).start();
 
     // Loop on the listen port forever.
     proxy.runListeningLoop();

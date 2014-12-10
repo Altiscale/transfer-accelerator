@@ -2,7 +2,7 @@
 * Copyright Altiscale 2014
 * Author: Cosmin Negruseri <cosmin@altiscale.com>
 *
-* ServerStatus is a Runnable that listens on port 1982 and returns a html page with values
+* ServerStatus is a Runnable that listens on a port and returns a html page with values
 * from getServerStats.
 */
 
@@ -20,31 +20,34 @@ import java.util.Map;
 
 import com.altiscale.Util.ServerWithStats;
 
+// TODO(cosmin): add http interface.
+
 public class ServerStatus implements Runnable {
 
   // log4j logger.
   private static Logger LOG = Logger.getLogger("TcpProxy");
  
-  ServerWithStats server; 
-  public ServerStatus(ServerWithStats server) {
+  private ServerWithStats server; 
+  private int port;
+
+  public ServerStatus(ServerWithStats server, int port) {
+    this.port = port;
     this.server = server;
   }
 
   @Override
   public void run() {
     try {
-      int port = 1982;
       ServerSocket serverSocket = new ServerSocket(port);
-      LOG.info("Started StatsServer thread on port 1982");
+      LOG.info("Started StatsServer thread on port " + port + ".");
 
-      // repeatedly wait for connections, and process
+      // Connection listening loop.
       while (true) {
         Socket clientSocket = serverSocket.accept();
 
         BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
 
-        // TODO(cosmin) handle /statusz
         String s;
         while ((s = in.readLine()) != null) {
           if (s.isEmpty()) {
@@ -54,7 +57,7 @@ public class ServerStatus implements Runnable {
 
         out.write("HTTP/1.0 200 OK\r\n");
         out.write("\r\n");
-        out.write("<TITLE>Server Status</TITLE>\r\n");
+        out.write("<TITLE>" + server.getServerName() + " Status</TITLE>\r\n");
 
         Map<String, String> map = server.getServerStats();
         out.write("<table border=\"1\">\r\n");
@@ -69,7 +72,7 @@ public class ServerStatus implements Runnable {
         clientSocket.close();
       }  
     } catch (java.io.IOException e) {
-      LOG.info("ServerStats thread died.");
+      LOG.error("ServerStats thread died.");
     }
   }
 }

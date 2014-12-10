@@ -11,4 +11,5 @@ import java.util.Map;
 
 public interface ServerWithStats {
   public Map<String, String> getServerStats();
+  public String getServerName();
 }
