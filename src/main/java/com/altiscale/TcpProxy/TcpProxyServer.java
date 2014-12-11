@@ -270,12 +270,12 @@ public class TcpProxyServer implements ServerWithStats {
                                    .hasArg()
                                    .create('p'));
 
-    options.addOption(OptionBuilder.withLongOpt("status-port")
+    options.addOption(OptionBuilder.withLongOpt("webstatus-port")
                                    .withDescription("Port for proxy status in html format.")
                                    .withArgName("STATUS_PORT")
                                    .withType(Number.class)
                                    .hasArg()
-                                   .create('s'));
+                                   .create('w'));
 
     options.addOption(OptionBuilder.withLongOpt("servers")
                                    .isRequired()
@@ -284,7 +284,7 @@ public class TcpProxyServer implements ServerWithStats {
                                                     " in host:port format.")
                                    .hasArgs()
                                    .withValueSeparator(' ')
-                                   .create('S'));
+                                   .create('s'));
 
     options.addOption(OptionBuilder.withLongOpt("help").create('h'));
 
@@ -333,8 +333,8 @@ public class TcpProxyServer implements ServerWithStats {
     ProxyConfiguration conf = proxy.new ProxyConfiguration(listeningPort);
 
     int statusPort = 1982;
-    if (commandLine.hasOption("status-port")) {
-      statusPort =  Integer.parseInt(commandLine.getOptionValue("status-port"));
+    if (commandLine.hasOption("webstatus-port")) {
+      statusPort =  Integer.parseInt(commandLine.getOptionValue("webstatus-port"));
     }
 
     // Launch ServerStats thread.
