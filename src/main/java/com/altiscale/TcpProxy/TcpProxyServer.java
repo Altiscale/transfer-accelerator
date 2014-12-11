@@ -18,6 +18,8 @@ package com.altiscale.TcpProxy;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -25,6 +27,13 @@ import java.util.ArrayList;
 import com.altiscale.Util.SecondMinuteHourCounter;
 import com.altiscale.Util.ServerStatus;
 import com.altiscale.Util.ServerWithStats;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 public class TcpProxyServer implements ServerWithStats {
 
@@ -51,7 +60,14 @@ public class TcpProxyServer implements ServerWithStats {
       serverHostPortList = new ArrayList<HostPort>();
     }
 
-    public void addServer(String host, int port) {
+    public void parseServerStringAndAdd(String server) throws URISyntaxException {
+      // WORKAROUND: add any scheme to make the resulting URI valid.
+      URI uri = new URI("my://" + server); // may throw URISyntaxException
+      String host = uri.getHost();
+      int port = uri.getPort();
+      if (uri.getHost() == null || uri.getPort() == -1) {
+        throw new URISyntaxException(uri.toString(), "URI must have host and port parts");
+      }
       serverHostPortList.add(new HostPort(host, port));
     }
   }
@@ -237,55 +253,89 @@ public class TcpProxyServer implements ServerWithStats {
   }
 
   public String usage() {
-    return "Usage: tcpProxy <proxyPort> [<server_name> <server_port>]+";
+    return "Usage: tcpProxy -port <proxyPort> " + 
+           "-status-port <status_port> -servers [<server_name>:<server_port>]+";
   }
 
   public String getServerName() {
     return name;
   }
 
+  public static Options getCommandLineOptions() {
+    Options options = new Options();
+
+    //options.addOption("v", "verbose", false, "Verbose logging.");
+
+    options.addOption(OptionBuilder.withLongOpt("port")
+                                   .withDescription("Listening port for proxy clients.")
+                                   .withType(Number.class)
+                                   .hasArg()
+                                   .create());
+
+    options.addOption(OptionBuilder.withLongOpt("status-port")
+                                   .withDescription("Port for proxy status in html format.")
+                                   .withType(Number.class)
+                                   .hasArg()
+                                   .create());
+
+    options.addOption(OptionBuilder.withLongOpt("servers")
+                                   .withDescription("Server/servers for the proxy to connect to" +
+                                                    " in server:port format.")
+                                   .hasArgs()
+                                   .withValueSeparator(' ')
+                                   .create());
+
+    return options; 
+  }
+
   public static void main (String[] args) {
     TcpProxyServer proxy = new TcpProxyServer("TcpProxy");
 
-    // TODO(zoran): add command line arguments using Apache Commons CLI.
-    // TODO(zoran): enable users to specify one hostname and multiple ports.
-    if (args.length < 3) {
+    // Create the options.
+    Options options = getCommandLineOptions();
+
+    CommandLine commandLine = null;
+    try {
+      commandLine = new GnuParser().parse(options, args);
+    } catch (org.apache.commons.cli.ParseException e) {
+      LOG.info("Parsing exception" + e.getMessage());
       LOG.info(proxy.usage());
       System.exit(1);
     }
-    int proxyPort = 0;
+ 
+    // TODO(zoran): enable users to specify one hostname and multiple ports.
+    int listeningPort = 12345; // default value
+    if (commandLine.hasOption("port")) {
+       listeningPort = Integer.parseInt(commandLine.getOptionValue("port"));
+    }
+    ProxyConfiguration conf = proxy.new ProxyConfiguration(listeningPort);
+
+    int statusPort = 1982;
+    if (commandLine.hasOption("status-port")) {
+      statusPort =  Integer.parseInt(commandLine.getOptionValue("status-port"));
+    }
+
+    // Launch ServerStats thread.
+    new Thread(new ServerStatus(proxy, statusPort)).start();
+
+
+    // Add servers.
+    String[] servers = commandLine.getOptionValues("servers");
     try {
-      proxyPort = Integer.parseInt(args[0]);
-    } catch (Exception e) {
-      LOG.error("Parsing error: " + e.getMessage());
+      for (String server : servers) {
+        conf.parseServerStringAndAdd(server);
+      }
+    } catch (URISyntaxException e) {
+      LOG.error("Server path parsing exception " + e.getMessage());
       System.exit(1);
     }
 
-    ProxyConfiguration conf = proxy.new ProxyConfiguration(proxyPort);
-
-    // Setup servers from command line.
-    for (int i = 1; i < args.length; i++) {
-      String server = args[i];
-      if (i + 1 < args.length) {
-        i++;
-        try {
-          int port = Integer.parseInt(args[i]);
-          conf.addServer(server, port);
-        } catch (Exception e) {
-          LOG.error("Error while setting server [" + server +
-                    "] from command line: " + e.getMessage());
-        }
-      }
-    }
     proxy.init(conf);
 
     if (proxy.getServerList().size() < 1) {
       LOG.error("No server specified.");
       System.exit(1);
     }
-
-    // Lauch ServerStats thread.
-    new Thread(new ServerStatus(proxy, 1982)).start();
 
     // Loop on the listen port forever.
     proxy.runListeningLoop();
