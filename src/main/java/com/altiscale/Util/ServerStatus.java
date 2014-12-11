@@ -44,6 +44,7 @@ public class ServerStatus implements Runnable {
       LOG.info("Started HttpServer accessible at localhost:" + port + "/stats");
     } catch (IOException e) {
       LOG.error("Could not start HttpServer. " + e.getMessage());
+      System.exit(1);
     }
   }
 
