@@ -279,9 +279,9 @@ public class TcpProxyServer implements ServerWithStats {
 
     options.addOption(OptionBuilder.withLongOpt("servers")
                                    .isRequired()
-                                   .withArgName("host1:port1> <host2:port2")
+                                   .withArgName("HOST1:PORT1> <HOST2:PORT2")
                                    .withDescription("Server/servers for the proxy to connect to" +
-                                                    " in server:port format.")
+                                                    " in host:port format.")
                                    .hasArgs()
                                    .withValueSeparator(' ')
                                    .create('S'));
@@ -292,9 +292,9 @@ public class TcpProxyServer implements ServerWithStats {
   }
 
   public static void printHelp(Options options) {
-    String header = "Start a proxy that listens on <port> and forwards " +
+    String header = "Start a proxy that listens on <PORT> and forwards " +
                     "incomming connections to " +
-                    "<host1:port1> <host2:port2> ...\n\n";
+                    "<HOST1:PORT1> <HOST2:PORT2> ...\n\n";
     String footer = "";
     HelpFormatter formatter = new HelpFormatter();
     formatter.printHelp("tcpProxy", header, options, footer, true);
