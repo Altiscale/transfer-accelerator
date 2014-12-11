@@ -8,62 +8,64 @@
 
 package com.altiscale.Util;
 
-import org.apache.log4j.Logger;
+import java.io.OutputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 
-import java.net.Socket;
-import java.net.ServerSocket;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.util.Map;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 
 import com.altiscale.Util.ServerWithStats;
 
-// TODO(cosmin): add http interface.
+import org.apache.log4j.Logger;
 
 public class ServerStatus implements Runnable {
 
   // log4j logger.
   private static Logger LOG = Logger.getLogger("TcpProxy");
  
-  private ServerWithStats server; 
+  private ServerWithStats serverWithStats; 
   private int port;
 
   public ServerStatus(ServerWithStats server, int port) {
     this.port = port;
-    this.server = server;
+    this.serverWithStats = server;
   }
 
   @Override
   public void run() {
     try {
-      ServerSocket serverSocket = new ServerSocket(port);
-      LOG.info("Started StatsServer thread on port " + port + ".");
+      InetSocketAddress addr = new InetSocketAddress(port);
+      HttpServer httpServer = HttpServer.create(addr, 0);
+      httpServer.createContext("/stats", new StatsHandler(serverWithStats));
+      httpServer.start();
+      LOG.info("Started HttpServer accessible at localhost:" + port + "/stats");
+    } catch (IOException e) {
+      LOG.error("Could not start HttpServer. " + e.getMessage());
+    }
+  }
 
-      // Connection listening loop.
-      while (true) {
-        Socket clientSocket = serverSocket.accept();
+  class StatsHandler implements HttpHandler {
+    ServerWithStats serverWithStats;
 
-        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
+    public StatsHandler(ServerWithStats server) {
+      this.serverWithStats = server;
+    }
 
-        String s;
-        while ((s = in.readLine()) != null) {
-          if (s.isEmpty()) {
-            break;
-          }
-        }
-
-        out.write(server.getServerStatsHtml());
-
-        out.flush();
-        out.close();
-        in.close();
-        clientSocket.close();
-      }  
-    } catch (java.io.IOException e) {
-      LOG.error("ServerStats thread died.");
+    public void handle(HttpExchange exchange) throws IOException {
+      String requestMethod = exchange.getRequestMethod();
+      if (requestMethod.equalsIgnoreCase("GET")) {
+        String response = serverWithStats.getServerStatsHtml();
+        Headers responseHeaders = exchange.getResponseHeaders();
+        responseHeaders.set("Content-Type", "text/html");
+        exchange.sendResponseHeaders(200, response.getBytes().length);
+        OutputStream responseBody = exchange.getResponseBody();
+        Headers requestHeaders = exchange.getRequestHeaders();
+        responseBody.write(response.getBytes());
+        responseBody.close();
+      }
     }
   }
 }
