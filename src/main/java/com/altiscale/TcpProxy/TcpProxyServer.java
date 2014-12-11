@@ -116,6 +116,45 @@ public class TcpProxyServer implements ServerWithStats {
     }
   }
 
+  protected interface LoadBalancer {
+      public Server getServer();
+  }
+
+  protected class RoundRobin implements LoadBalancer {
+    private ArrayList<Server> servers;
+
+    private int nextServerId = 0;
+
+    public RoundRobin(ArrayList<Server> servers) {
+      this.servers = servers;
+    }
+
+    public Server getServer() {
+      nextServerId = (nextServerId + 1) % serverList.size();
+      return serverList.get(nextServerId);
+    }
+  }
+
+  protected class LeastUsed implements LoadBalancer {
+    private ArrayList<Server> servers;
+
+    public LeastUsed(ArrayList<Server> servers) {
+      this.servers = servers;
+    }
+
+    public Server getServer() {
+      Server leastUsedServer = null;
+      long leastUsedByteRate = Long.MAX_VALUE;
+      for (Server server : servers) {
+        if (server.byteRateCnt.getLastMinuteCnt() < leastUsedByteRate) {
+          leastUsedByteRate = server.byteRateCnt.getLastMinuteCnt();
+          leastUsedServer = server;
+        }
+      }
+      return leastUsedServer;
+    }
+  }
+
   // log4j logger.
   private static Logger LOG = Logger.getLogger("TcpProxy");
 
@@ -133,8 +172,7 @@ public class TcpProxyServer implements ServerWithStats {
   // server until we establish the tunnel.
   private ArrayList<Server> serverList;
 
-  // Used by round-robin load-balancing algorithm.
-  private int nextServerId = 0;
+  private LoadBalancer loadBalancer;
 
   private String name;
 
@@ -221,15 +259,10 @@ public class TcpProxyServer implements ServerWithStats {
     return serverList;
   }
 
-  public Server getRoundRobinServer() {
-    nextServerId = (nextServerId + 1) % serverList.size();
-    return serverList.get(nextServerId);
-  }
-
   public void setupTunnel(Socket clientSocket) {
     final int RETRY_MAX = 3;
     for (int i = 0; i < RETRY_MAX; i++) {
-      Server server = getRoundRobinServer();
+      Server server = loadBalancer.getServer();
       try {
         server.establishTunnel(clientSocket);
         break;
@@ -285,10 +318,20 @@ public class TcpProxyServer implements ServerWithStats {
                                    .hasArgs()
                                    .withValueSeparator(' ')
                                    .create('s'));
+     options.addOption(OptionBuilder.withLongOpt("load-balancer")
+                                   .withArgName("LOAD_BALANCER")
+                                   .withDescription("Load balancing algorithm. Options: ROUND_ROBIN" +
+                                                    ", LEAST_USED.")
+                                   .hasArg()
+                                   .create('b'));
 
     options.addOption(OptionBuilder.withLongOpt("help").create('h'));
 
     return options; 
+  }
+
+  public void setLoadBalancer(LoadBalancer loadBalancer) {
+    this.loadBalancer = loadBalancer;
   }
 
   public static void printHelp(Options options) {
@@ -324,8 +367,8 @@ public class TcpProxyServer implements ServerWithStats {
 
     if (commandLine.hasOption("verbose") ) {
       LogManager.getRootLogger().setLevel(Level.DEBUG);
-    } 
- 
+    }
+
     int listeningPort = 12345; // default value
     if (commandLine.hasOption("port")) {
        listeningPort = Integer.parseInt(commandLine.getOptionValue("port"));
@@ -359,6 +402,21 @@ public class TcpProxyServer implements ServerWithStats {
       printHelp(options);
       System.exit(1);
     }
+
+    LoadBalancer loadBalancer = proxy. new RoundRobin(proxy.getServerList());
+    if (commandLine.hasOption("load-balancer")) {
+      if (!commandLine.getOptionValue("load-balancer").equals("LEAST_USED") &&
+          !commandLine.getOptionValue("load-balancer").equals("ROUND_ROBIN")) {
+        LOG.error("Bad load-balancer value.");
+        printHelp(options);
+        System.exit(1);
+      }
+      if (commandLine.getOptionValue("load-balancer").equals("LEAST_USED")) {
+        loadBalancer = proxy. new LeastUsed(proxy.getServerList());
+      }
+    }
+
+    proxy.setLoadBalancer(loadBalancer);
 
     // Loop on the listen port forever.
     proxy.runListeningLoop();
