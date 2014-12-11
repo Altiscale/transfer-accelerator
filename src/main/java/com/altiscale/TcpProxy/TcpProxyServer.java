@@ -306,6 +306,8 @@ public class TcpProxyServer implements ServerWithStats {
     // Create the options.
     Options options = getCommandLineOptions();
 
+    LogManager.getRootLogger().setLevel(Level.WARN);
+
     CommandLine commandLine = null;
     try {
       commandLine = new GnuParser().parse(options, args);
@@ -322,11 +324,8 @@ public class TcpProxyServer implements ServerWithStats {
 
     if (commandLine.hasOption("verbose") ) {
       LogManager.getRootLogger().setLevel(Level.DEBUG);
-    } else {
-      LogManager.getRootLogger().setLevel(Level.ERROR);
-    }
+    } 
  
-    // TODO(zoran): enable users to specify one hostname and multiple ports.
     int listeningPort = 12345; // default value
     if (commandLine.hasOption("port")) {
        listeningPort = Integer.parseInt(commandLine.getOptionValue("port"));
