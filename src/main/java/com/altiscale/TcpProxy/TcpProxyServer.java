@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Random;
 
 import com.altiscale.Util.SecondMinuteHourCounter;
 import com.altiscale.Util.ServerStatus;
@@ -78,6 +79,7 @@ public class TcpProxyServer implements ServerWithStats {
     HostPort hostPort;
 
     SecondMinuteHourCounter requestCnt;
+    SecondMinuteHourCounter failedCnt;
     SecondMinuteHourCounter openedCnt;
     SecondMinuteHourCounter closedCnt;
     SecondMinuteHourCounter byteRateCnt;
@@ -85,9 +87,14 @@ public class TcpProxyServer implements ServerWithStats {
     public Server(HostPort hostPort) {
       this.hostPort = hostPort;
       requestCnt = new SecondMinuteHourCounter("requestCnt " + hostPort.toString());
+      failedCnt = new SecondMinuteHourCounter("incrementCnt " + hostPort.toString());
       openedCnt = new SecondMinuteHourCounter("openedCnt " + hostPort.toString());
       closedCnt = new SecondMinuteHourCounter("closedCnt " + hostPort.toString());
       byteRateCnt = new SecondMinuteHourCounter("byteRateCnt " + hostPort.toString());
+    }
+
+    public void incrementFailedConn() {
+      failedCnt.increment();
     }
 
     public void incrementOpenedConn() {
@@ -117,7 +124,7 @@ public class TcpProxyServer implements ServerWithStats {
   }
 
   protected interface LoadBalancer {
-      public Server getServer();
+    public Server getServer();
   }
 
   protected class RoundRobin implements LoadBalancer {
@@ -146,10 +153,17 @@ public class TcpProxyServer implements ServerWithStats {
       Server leastUsedServer = null;
       long leastUsedByteRate = Long.MAX_VALUE;
       for (Server server : servers) {
-        if (server.byteRateCnt.getLastMinuteCnt() < leastUsedByteRate) {
+        if (server.failedCnt.getLastSecondCnt() == 0 &&
+            server.byteRateCnt.getLastMinuteCnt() < leastUsedByteRate) {
           leastUsedByteRate = server.byteRateCnt.getLastMinuteCnt();
           leastUsedServer = server;
         }
+      }
+
+      // All servers have failures in the last second so we return one at random.
+      if (leastUsedServer == null) {
+        leastUsedServer = servers.get(
+            new Random(System.currentTimeMillis()).nextInt(servers.size()));
       }
       return leastUsedServer;
     }
@@ -224,6 +238,16 @@ public class TcpProxyServer implements ServerWithStats {
                          "</td></tr>\r\n";
     }
 
+    for (Server server : serverList) {
+      htmlServerStats += "<tr><td><b>" + server.hostPort.toString() + "</b> failed connections </td><td>" +
+                         "<table><tr>" +
+                         "<td>" + server.failedCnt.getLastSecondCnt() + " /s</td>" +
+                         "<td>" + server.failedCnt.getLastMinuteCnt() + " /min</td>" +
+                         "<td>" + server.failedCnt.getLastHourCnt() + " /h</td>" +
+                         "</tr></table>" +
+                         "</td></tr>\r\n";
+    }
+
     htmlServerStats += "<tr><td>opened connections</td><td>" + openedConnections +
                        "</td></tr>\r\n";
     htmlServerStats += "<tr><td>closed connections</td><td>" + closedConnections +
@@ -269,6 +293,7 @@ public class TcpProxyServer implements ServerWithStats {
       } catch (IOException ioe) {
         LOG.error("Error while connecting to server " +
                   server.hostPort.host + ":" + server.hostPort.port);
+        server.incrementFailedConn();
       }
     }
   }
