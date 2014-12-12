@@ -25,6 +25,9 @@ import java.net.URISyntaxException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Random;
 
 import com.altiscale.Util.SecondMinuteHourCounter;
 import com.altiscale.Util.ServerStatus;
@@ -78,6 +81,7 @@ public class TcpProxyServer implements ServerWithStats {
     HostPort hostPort;
 
     SecondMinuteHourCounter requestCnt;
+    SecondMinuteHourCounter failedCnt;
     SecondMinuteHourCounter openedCnt;
     SecondMinuteHourCounter closedCnt;
     SecondMinuteHourCounter byteRateCnt;
@@ -85,9 +89,14 @@ public class TcpProxyServer implements ServerWithStats {
     public Server(HostPort hostPort) {
       this.hostPort = hostPort;
       requestCnt = new SecondMinuteHourCounter("requestCnt " + hostPort.toString());
+      failedCnt = new SecondMinuteHourCounter("incrementCnt " + hostPort.toString());
       openedCnt = new SecondMinuteHourCounter("openedCnt " + hostPort.toString());
       closedCnt = new SecondMinuteHourCounter("closedCnt " + hostPort.toString());
       byteRateCnt = new SecondMinuteHourCounter("byteRateCnt " + hostPort.toString());
+    }
+
+    public void incrementFailedConn() {
+      failedCnt.increment();
     }
 
     public void incrementOpenedConn() {
@@ -116,6 +125,65 @@ public class TcpProxyServer implements ServerWithStats {
     }
   }
 
+  protected interface LoadBalancer {
+    public Server getServer();
+  }
+
+  protected class RoundRobin implements LoadBalancer {
+    private ArrayList<Server> servers;
+
+    private int nextServerId = 0;
+
+    public RoundRobin(ArrayList<Server> servers) {
+      this.servers = servers;
+    }
+
+    public Server getServer() {
+      nextServerId = (nextServerId + 1) % serverList.size();
+      return serverList.get(nextServerId);
+    }
+  }
+
+  protected class UniformRandom implements LoadBalancer {
+     private ArrayList<Server> servers;
+
+     public UniformRandom(ArrayList<Server> servers) {
+       this.servers = servers;
+     }
+
+     public Server getServer() {
+       return servers.get(
+           new Random(System.currentTimeMillis()).nextInt(servers.size()));
+     }
+  }
+
+  protected class LeastUsed implements LoadBalancer {
+    private ArrayList<Server> servers;
+
+    public LeastUsed(ArrayList<Server> servers) {
+      this.servers = servers;
+    }
+
+    public Server getServer() {
+      Server leastUsedServer = null;
+      long leastUsedByteRate = Long.MAX_VALUE;
+      for (Server server : servers) {
+        if (server.failedCnt.getLastSecondCnt() == 0 &&
+            server.byteRateCnt.getLastMinuteCnt() < leastUsedByteRate) {
+          leastUsedByteRate = server.byteRateCnt.getLastMinuteCnt();
+          leastUsedServer = server;
+        }
+      }
+
+      // All servers have failures in the last second so we return one at random.
+      if (leastUsedServer == null) {
+         leastUsedServer = new UniformRandom(servers).getServer();
+      }
+
+      return leastUsedServer;
+    }
+  }
+
   // log4j logger.
   private static Logger LOG = Logger.getLogger("TcpProxy");
 
@@ -133,8 +201,7 @@ public class TcpProxyServer implements ServerWithStats {
   // server until we establish the tunnel.
   private ArrayList<Server> serverList;
 
-  // Used by round-robin load-balancing algorithm.
-  private int nextServerId = 0;
+  private LoadBalancer loadBalancer;
 
   private String name;
 
@@ -186,6 +253,16 @@ public class TcpProxyServer implements ServerWithStats {
                          "</td></tr>\r\n";
     }
 
+    for (Server server : serverList) {
+      htmlServerStats += "<tr><td><b>" + server.hostPort.toString() + "</b> failed connections </td><td>" +
+                         "<table><tr>" +
+                         "<td>" + server.failedCnt.getLastSecondCnt() + " /s</td>" +
+                         "<td>" + server.failedCnt.getLastMinuteCnt() + " /min</td>" +
+                         "<td>" + server.failedCnt.getLastHourCnt() + " /h</td>" +
+                         "</tr></table>" +
+                         "</td></tr>\r\n";
+    }
+
     htmlServerStats += "<tr><td>opened connections</td><td>" + openedConnections +
                        "</td></tr>\r\n";
     htmlServerStats += "<tr><td>closed connections</td><td>" + closedConnections +
@@ -221,21 +298,17 @@ public class TcpProxyServer implements ServerWithStats {
     return serverList;
   }
 
-  public Server getRoundRobinServer() {
-    nextServerId = (nextServerId + 1) % serverList.size();
-    return serverList.get(nextServerId);
-  }
-
   public void setupTunnel(Socket clientSocket) {
     final int RETRY_MAX = 3;
     for (int i = 0; i < RETRY_MAX; i++) {
-      Server server = getRoundRobinServer();
+      Server server = loadBalancer.getServer();
       try {
         server.establishTunnel(clientSocket);
         break;
       } catch (IOException ioe) {
         LOG.error("Error while connecting to server " +
                   server.hostPort.host + ":" + server.hostPort.port);
+        server.incrementFailedConn();
       }
     }
   }
@@ -285,10 +358,20 @@ public class TcpProxyServer implements ServerWithStats {
                                    .hasArgs()
                                    .withValueSeparator(' ')
                                    .create('s'));
+     options.addOption(OptionBuilder.withLongOpt("load-balancer")
+                                   .withArgName("LOAD_BALANCER")
+                                   .withDescription("Load balancing algorithm. Options: RoundRobin" +
+                                                    ", LeastUsed, UniformRandom.")
+                                   .hasArg()
+                                   .create('b'));
 
     options.addOption(OptionBuilder.withLongOpt("help").create('h'));
 
     return options; 
+  }
+
+  public void setLoadBalancer(LoadBalancer loadBalancer) {
+    this.loadBalancer = loadBalancer;
   }
 
   public static void printHelp(Options options) {
@@ -324,8 +407,8 @@ public class TcpProxyServer implements ServerWithStats {
 
     if (commandLine.hasOption("verbose") ) {
       LogManager.getRootLogger().setLevel(Level.DEBUG);
-    } 
- 
+    }
+
     int listeningPort = 12345; // default value
     if (commandLine.hasOption("port")) {
        listeningPort = Integer.parseInt(commandLine.getOptionValue("port"));
@@ -359,6 +442,24 @@ public class TcpProxyServer implements ServerWithStats {
       printHelp(options);
       System.exit(1);
     }
+
+    LoadBalancer loadBalancer = proxy. new RoundRobin(proxy.getServerList());
+    if (commandLine.hasOption("load-balancer")) {
+      HashSet<String> loadBalancers = new HashSet<String>(
+          Arrays.asList("RoundRobin", "LeastUsed", "UniformRandom"));
+      String loadBalancerString = commandLine.getOptionValue("load-balancer");
+      if (!loadBalancers.contains(loadBalancerString)) {
+        LOG.error("Bad load-balancer value.");
+        printHelp(options);
+        System.exit(1);
+      }
+      if (loadBalancerString.equals("LeastUsed"))
+        loadBalancer = proxy. new LeastUsed(proxy.getServerList());
+      if (loadBalancerString.equals("UniformRandom"))
+        loadBalancer = proxy. new UniformRandom(proxy.getServerList());
+    }
+
+    proxy.setLoadBalancer(loadBalancer);
 
     // Loop on the listen port forever.
     proxy.runListeningLoop();
