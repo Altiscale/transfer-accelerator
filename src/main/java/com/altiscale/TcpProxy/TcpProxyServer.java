@@ -25,6 +25,8 @@ import java.net.URISyntaxException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Random;
 
 import com.altiscale.Util.SecondMinuteHourCounter;
@@ -142,6 +144,19 @@ public class TcpProxyServer implements ServerWithStats {
     }
   }
 
+  protected class UniformRandom implements LoadBalancer {
+     private ArrayList<Server> servers;
+
+     public UniformRandom(ArrayList<Server> servers) {
+       this.servers = servers;
+     }
+
+     public Server getServer() {
+       return servers.get(
+           new Random(System.currentTimeMillis()).nextInt(servers.size()));
+     }
+  }
+
   protected class LeastUsed implements LoadBalancer {
     private ArrayList<Server> servers;
 
@@ -162,9 +177,9 @@ public class TcpProxyServer implements ServerWithStats {
 
       // All servers have failures in the last second so we return one at random.
       if (leastUsedServer == null) {
-        leastUsedServer = servers.get(
-            new Random(System.currentTimeMillis()).nextInt(servers.size()));
+         leastUsedServer = new UniformRandom(servers).getServer();
       }
+
       return leastUsedServer;
     }
   }
@@ -345,8 +360,8 @@ public class TcpProxyServer implements ServerWithStats {
                                    .create('s'));
      options.addOption(OptionBuilder.withLongOpt("load-balancer")
                                    .withArgName("LOAD_BALANCER")
-                                   .withDescription("Load balancing algorithm. Options: ROUND_ROBIN" +
-                                                    ", LEAST_USED.")
+                                   .withDescription("Load balancing algorithm. Options: RoundRobin" +
+                                                    ", LeastUsed, UniformRandom.")
                                    .hasArg()
                                    .create('b'));
 
@@ -430,15 +445,18 @@ public class TcpProxyServer implements ServerWithStats {
 
     LoadBalancer loadBalancer = proxy. new RoundRobin(proxy.getServerList());
     if (commandLine.hasOption("load-balancer")) {
-      if (!commandLine.getOptionValue("load-balancer").equals("LEAST_USED") &&
-          !commandLine.getOptionValue("load-balancer").equals("ROUND_ROBIN")) {
+      HashSet<String> loadBalancers = new HashSet<String>(
+          Arrays.asList("RoundRobin", "LeastUsed", "UniformRandom"));
+      String loadBalancerString = commandLine.getOptionValue("load-balancer");
+      if (!loadBalancers.contains(loadBalancerString)) {
         LOG.error("Bad load-balancer value.");
         printHelp(options);
         System.exit(1);
       }
-      if (commandLine.getOptionValue("load-balancer").equals("LEAST_USED")) {
+      if (loadBalancerString.equals("LeastUsed"))
         loadBalancer = proxy. new LeastUsed(proxy.getServerList());
-      }
+      if (loadBalancerString.equals("UniformRandom"))
+        loadBalancer = proxy. new UniformRandom(proxy.getServerList());
     }
 
     proxy.setLoadBalancer(loadBalancer);
