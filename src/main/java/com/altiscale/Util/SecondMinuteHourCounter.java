@@ -87,7 +87,7 @@ class SlidingWindowCounter {
       buckets.add(new Pair(bucketTimestamp, amount));
     }
   }
-  
+
   public long getCount() {
     removeOutdatedBuckets();
     return counter;

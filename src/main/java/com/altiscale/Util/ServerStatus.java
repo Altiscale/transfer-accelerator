@@ -25,8 +25,8 @@ public class ServerStatus implements Runnable {
 
   // log4j logger.
   private static Logger LOG = Logger.getLogger("TcpProxy");
- 
-  private ServerWithStats serverWithStats; 
+
+  private ServerWithStats serverWithStats;
   private int port;
 
   public ServerStatus(ServerWithStats server, int port) {

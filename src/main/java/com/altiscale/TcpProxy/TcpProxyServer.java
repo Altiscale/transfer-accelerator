@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
 
+import com.altiscale.Util.ExecLoop;
 import com.altiscale.Util.SecondMinuteHourCounter;
 import com.altiscale.Util.ServerStatus;
 import com.altiscale.Util.ServerWithStats;
@@ -61,24 +62,49 @@ public class TcpProxyServer implements ServerWithStats {
     int listeningPort;
     ArrayList<HostPort> serverHostPortList;
 
+    // TODO(zoran): move this into JumpHost class.
+    HostPort jumphost;
+    HostPort jumphostServer;
+    String jumphostUser;
+    String jumphostCredentials;
+    String sshBinary;
+
     public ProxyConfiguration(int port) {
       listeningPort = port;
       serverHostPortList = new ArrayList<HostPort>();
+      jumphost = null;
     }
 
-    public void parseServerStringAndAdd(String server) throws URISyntaxException {
+    public HostPort parseServerString(String server) throws URISyntaxException {
       URI uri = new URI("my://" + server);
       String host = uri.getHost();
       int port = uri.getPort();
-      if (uri.getHost() == null || uri.getPort() == -1) {
-        throw new URISyntaxException(uri.toString(), "URI must have host and port.");
+      if (uri.getHost() == null) {
+        throw new URISyntaxException(uri.toString(), "URI must have at least a hostname.");
       }
-      serverHostPortList.add(new HostPort(host, port));
+      // Library sets port to -1 if it was missing in String server.
+      return new HostPort(host, port);
+    }
+
+    public void parseServerStringAndAdd(String server) throws URISyntaxException {
+      serverHostPortList.add(parseServerString(server));
     }
   }
 
   protected class Server {
+    // Host and port of the server to connect. If jumphost exists, then it's as seen from
+    // jumphost.
     HostPort hostPort;
+
+    // Jumphost to use for ssh tunnel to server. Null if not needed.
+    HostPort jumphost;
+    HostPort jumphostServer;
+    String jumphostUser;
+    String jumphostCredentials;
+    String sshBinary;
+
+    // If we have a jumphost, we also start ssh process, monitor it, and restart it if needed.
+    ExecLoop sshProcess;
 
     SecondMinuteHourCounter requestCnt;
     SecondMinuteHourCounter failedCnt;
@@ -86,13 +112,98 @@ public class TcpProxyServer implements ServerWithStats {
     SecondMinuteHourCounter closedCnt;
     SecondMinuteHourCounter byteRateCnt;
 
+    /*
+     *  @param hostPort        host:port of the server-side for our tcp tunnels.
+     */
     public Server(HostPort hostPort) {
+      init(hostPort);
+    }
+
+    /*
+     *  @param hostPort        host:port of the server-side for our tcp tunnels. If used with a
+     *                         jumphost host must be the name of machine where our proxy is running
+     *                         (for example, localhost or 127.0.0.1). Port number must be available
+     *                         on the machine we are running.
+     *  @param jumphost        host:port of machine to use for establishing ssh tunnel to
+     *                         jumphostServer. jumphost.host is the name of the machine where sshd
+     *                         is running, and jumphost.port is the sshd port number.
+     *  @param jumphostServer  End server we want to connect to via ssh tunnel. For example,
+     *                         httpfs-node:14000. jumphostServer.host must be visible from jumphost
+     *  @param jumphostUser    Optional username we want to use for ssh (to override the default).
+     *  @param jumphostCredentials  Optional path to a file with ssh credentials to use with ssh -i
+     *  @param sshBinary       Optional binary path and name to use instead of default 'ssh'.
+     *
+     *  @return  Thread in which we're running.
+     */
+    public Server(
+        HostPort hostPort,
+        HostPort jumphost,
+        HostPort jumphostServer,
+        String jumphostUser,
+        String jumphostCredentials,
+        String sshBinary) {
+      // We first initialize as if we don't use jumphost, and then set jumphost params.
+      init(hostPort);
+
+      this.jumphost = jumphost;
+      this.jumphostServer = jumphostServer;
+      this.jumphostUser = jumphostUser;
+      this.jumphostCredentials = jumphostCredentials;
+      this.sshBinary = sshBinary;
+    }
+
+    private void init(HostPort hostPort) {
       this.hostPort = hostPort;
+      this.jumphost = null;
+      this.sshProcess = null;
+      this.jumphostServer = null;
+      this.jumphostUser = null;
+      this.jumphostCredentials = null;
+      this.sshBinary = null;
       requestCnt = new SecondMinuteHourCounter("requestCnt " + hostPort.toString());
       failedCnt = new SecondMinuteHourCounter("incrementCnt " + hostPort.toString());
       openedCnt = new SecondMinuteHourCounter("openedCnt " + hostPort.toString());
       closedCnt = new SecondMinuteHourCounter("closedCnt " + hostPort.toString());
       byteRateCnt = new SecondMinuteHourCounter("byteRateCnt " + hostPort.toString());
+    }
+
+    public String sshJumphostCommand() {
+      assert null != jumphost;
+      assert null != jumphostServer;
+
+      String sshTunnelCmd = "ssh";
+
+      if (null != sshBinary) {
+        sshTunnelCmd = sshBinary;
+      }
+
+      // Start in foreground, but not interactive.
+      sshTunnelCmd += " -n -N -L ";
+      if (null != jumphostCredentials) {
+        sshTunnelCmd += " -i " + jumphostCredentials;
+      }
+
+      // TODO(zoran): use hostPort.host to first ssh to it and establish a tunnel from there.
+      // This would support establishing tunnels from localhost or some other machine.
+      // NOTE(zoran): conenction between proxy and these machines would not be encrypted by
+      // our proxy.
+      sshTunnelCmd += hostPort.port + ":" + jumphostServer.host + ":" + jumphostServer.port;
+      if (null != jumphostUser) {
+        sshTunnelCmd += "-l " + jumphostUser;
+      }
+      if (-1 != jumphost.port) {
+        sshTunnelCmd += " -p " + jumphost.port;
+      }
+      sshTunnelCmd += " " + jumphost.host;
+      return sshTunnelCmd;
+    }
+
+    public void startJumphostThread() {
+      assert null == sshProcess;
+
+      sshProcess = new ExecLoop(sshJumphostCommand(), true, LOG);
+      // Launch ssh tunnel in ExecLoop.
+      sshProcess.start();
     }
 
     public void incrementFailedConn() {
@@ -242,7 +353,7 @@ public class TcpProxyServer implements ServerWithStats {
                        "<td>" + lastMinuteByteRate + " B/min</td>" +
                        "<td>" + lastHourByteRate + " B/h</td>" +
                        "</tr></table>";
- 
+
     for (Server server : serverList) {
       htmlServerStats += "<tr><td><b>" + server.hostPort.toString() + "</b> byte rate </td><td>" +
                          "<table><tr>" +
@@ -281,7 +392,20 @@ public class TcpProxyServer implements ServerWithStats {
     config = conf;
 
     for (HostPort serverHostPort : config.serverHostPortList) {
-      serverList.add(new Server(serverHostPort));
+      Server server = null;
+      if (null == config.jumphost) {
+        server = new Server(serverHostPort);
+      } else {
+        server = new Server(serverHostPort,
+                            config.jumphost,
+                            config.jumphostServer,
+                            config.jumphostUser,
+                            config.jumphostCredentials,
+                            config.sshBinary);
+        server.startJumphostThread();
+      }
+      assert null != server;
+      serverList.add(server);
     }
 
     tcpProxyPort = config.listeningPort;
@@ -343,7 +467,7 @@ public class TcpProxyServer implements ServerWithStats {
                                    .hasArg()
                                    .create('p'));
 
-    options.addOption(OptionBuilder.withLongOpt("webstatus-port")
+    options.addOption(OptionBuilder.withLongOpt("webstatus_port")
                                    .withDescription("Port for proxy status in html format.")
                                    .withArgName("STATUS_PORT")
                                    .withType(Number.class)
@@ -358,16 +482,49 @@ public class TcpProxyServer implements ServerWithStats {
                                    .hasArgs()
                                    .withValueSeparator(' ')
                                    .create('s'));
-     options.addOption(OptionBuilder.withLongOpt("load-balancer")
+
+    options.addOption(OptionBuilder.withLongOpt("load_balancer")
                                    .withArgName("LOAD_BALANCER")
                                    .withDescription("Load balancing algorithm. Options: RoundRobin" +
                                                     ", LeastUsed, UniformRandom.")
                                    .hasArg()
                                    .create('b'));
 
+    options.addOption(OptionBuilder.withLongOpt("ssh_binary")
+        .withArgName("SSH_BINARY")
+        .withDescription("Optional path to use as ssh command. Default is ssh.")
+        .hasArg()
+        .create());
+
+    options.addOption(OptionBuilder.withLongOpt("jumphost_user")
+        .withArgName("USER")
+        .withDescription("Username for ssh to jumphost.")
+        .hasArg()
+        .create('u'));
+
+    options.addOption(OptionBuilder.withLongOpt("jumphost_credentials")
+        .withArgName("FILENAME")
+        .withDescription("Filename for optional ssh credentials (ssh -i option).")
+        .hasArg()
+        .create('i'));
+
+    options.addOption(OptionBuilder.withLongOpt("jumphost")
+        .withArgName("JUMPHOST:JH_PORT")
+        .withDescription("Connect to servers via ssh tunnel to jumphost in jumphost:port format. " +
+            "You still need to specify servers and their ports using --servers.")
+        .hasArg()
+        .create('j'));
+
+    options.addOption(OptionBuilder.withLongOpt("jumphost_server")
+        .withArgName("JHSERVER:JHS_PORT")
+        .withDescription("Jumphost server behind the firewall to connect all servers using: " +
+            "SSH_BINARY -i ~/.ssh/id_rsa -n -N -L PORT:JHSERVER:JHS_PORT -l USER -p JH_PORT JUMPHOST")
+        .hasArg()
+        .create('y'));
+
     options.addOption(OptionBuilder.withLongOpt("help").create('h'));
 
-    return options; 
+    return options;
   }
 
   public void setLoadBalancer(LoadBalancer loadBalancer) {
@@ -416,12 +573,71 @@ public class TcpProxyServer implements ServerWithStats {
     ProxyConfiguration conf = proxy.new ProxyConfiguration(listeningPort);
 
     int statusPort = 1982;
-    if (commandLine.hasOption("webstatus-port")) {
-      statusPort =  Integer.parseInt(commandLine.getOptionValue("webstatus-port"));
+    if (commandLine.hasOption("webstatus_port")) {
+      statusPort =  Integer.parseInt(commandLine.getOptionValue("webstatus_port"));
     }
 
     // Launch ServerStats thread.
     new Thread(new ServerStatus(proxy, statusPort)).start();
+
+    // Maybe add jumphost.
+    if (commandLine.hasOption("jumphost")) {
+      String jumphostString = commandLine.getOptionValue("jumphost");
+      try {
+        conf.jumphost = conf.parseServerString(jumphostString);
+      } catch (URISyntaxException e) {
+        LOG.error("Server path parsing exception for jumphost: " + e.getMessage());
+        printHelp(options);
+        System.exit(1);
+      }
+    }
+
+    // Add jumphostServer if we have a jumphost.
+    if (commandLine.hasOption("jumphost_server")) {
+      if (!commandLine.hasOption("jumphost")) {
+        LOG.error("You need to specify jumphost if you specify jumphost_server.");
+        printHelp(options);
+        System.exit(1);
+      }
+      String jumphostServerString = commandLine.getOptionValue("jumphost_server");
+      try {
+        conf.jumphostServer = conf.parseServerString(jumphostServerString);
+      } catch (URISyntaxException e) {
+        LOG.error("Server path parsing exception for jumphost_server:" + e.getMessage());
+        printHelp(options);
+        System.exit(1);
+      }
+    }
+
+    // Maybe add jumphostUser if we have a jumphost.
+    if (commandLine.hasOption("jumphost_user")) {
+      if (!commandLine.hasOption("jumphost")) {
+        LOG.error("You need to specify jumphost if you specify jumphost_user.");
+        printHelp(options);
+        System.exit(1);
+      }
+      conf.jumphostUser = commandLine.getOptionValue("jumphost_user");
+    }
+
+    // Maybe add jumphostCredentials if we have a jumphost.
+    if (commandLine.hasOption("jumphost_credentials")) {
+      if (!commandLine.hasOption("jumphost")) {
+        LOG.error("You need to specify jumphost if you specify jumphost_credentials.");
+        printHelp(options);
+        System.exit(1);
+      }
+      conf.jumphostCredentials = commandLine.getOptionValue("jumphost_credentials");
+    }
+
+    // Maybe add sshBinary if we have a jumphost.
+    if (commandLine.hasOption("ssh_binary")) {
+      if (!commandLine.hasOption("jumphost")) {
+        LOG.error("You need to specify jumphost if you specify ssh_binary.");
+        printHelp(options);
+        System.exit(1);
+      }
+      conf.sshBinary = commandLine.getOptionValue("ssh_binary");
+    }
 
     // Add servers.
     String[] servers = commandLine.getOptionValues("servers");
@@ -444,12 +660,12 @@ public class TcpProxyServer implements ServerWithStats {
     }
 
     LoadBalancer loadBalancer = proxy. new RoundRobin(proxy.getServerList());
-    if (commandLine.hasOption("load-balancer")) {
+    if (commandLine.hasOption("load_balancer")) {
       HashSet<String> loadBalancers = new HashSet<String>(
           Arrays.asList("RoundRobin", "LeastUsed", "UniformRandom"));
-      String loadBalancerString = commandLine.getOptionValue("load-balancer");
+      String loadBalancerString = commandLine.getOptionValue("load_balancer");
       if (!loadBalancers.contains(loadBalancerString)) {
-        LOG.error("Bad load-balancer value.");
+        LOG.error("Bad load_balancer value.");
         printHelp(options);
         System.exit(1);
       }
