@@ -185,7 +185,7 @@ public class TcpProxyServer implements ServerWithStats {
   }
 
   // log4j logger.
-  private static Logger LOG = Logger.getLogger("TcpProxy");
+  private static Logger LOG = Logger.getLogger("TransferAccelerator");
 
   // Config for this proxy.
   private ProxyConfiguration config;
@@ -390,7 +390,7 @@ public class TcpProxyServer implements ServerWithStats {
     options.addOption(OptionBuilder.withLongOpt("load_balancer")
                                    .withArgName("LOAD_BALANCER")
                                    .withDescription("Load balancing algorithm. Options: " +
-                                                    " RoundRobin, LeastUsed, UniformRandom.")
+                                                    "RoundRobin, LeastUsed, UniformRandom.")
                                    .hasArg()
                                    .create('b'));
 
@@ -511,6 +511,10 @@ public class TcpProxyServer implements ServerWithStats {
       String jumphostServerString = commandLine.getOptionValue("jumphost_server");
       try {
         jumphostServer = conf.parseServerString(jumphostServerString);
+        if (jumphostServer.port == -1) {
+          throw new URISyntaxException(jumphostServerString,
+                                       "Jumphost server parameter missing port.");
+        }
       } catch (URISyntaxException e) {
         LOG.error("Server path parsing exception for jumphost_server:" + e.getMessage());
         printHelp(options);

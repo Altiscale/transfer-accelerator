@@ -19,7 +19,7 @@ import com.altiscale.Util.SecondMinuteHourCounter;
 
 public class Server {
   // log4j logger.
-  private static Logger LOG = Logger.getLogger("TcpProxy");
+  private static Logger LOG = Logger.getLogger("TransferAccelerator");
 
   // Host and port of the server to connect. If jumphost exists, then it's as seen from
   // jumphost.

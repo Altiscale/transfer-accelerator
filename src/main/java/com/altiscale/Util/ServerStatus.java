@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 public class ServerStatus implements Runnable {
 
   // log4j logger.
-  private static Logger LOG = Logger.getLogger("TcpProxy");
+  private static Logger LOG = Logger.getLogger("TransferAccelerator");
 
   private ServerWithStats serverWithStats;
   private int port;

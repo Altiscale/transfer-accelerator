@@ -29,7 +29,7 @@ import com.altiscale.TcpProxy.Server;
 
 public class TcpTunnel {
   // log4j logger.
-  private static Logger LOG = Logger.getLogger("TcpProxy");
+  private static Logger LOG = Logger.getLogger("TransferAccelerator");
 
   // Socket from our client to us.
   private Socket clientSocket;

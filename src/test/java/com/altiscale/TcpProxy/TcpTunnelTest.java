@@ -117,7 +117,7 @@ public class TcpTunnelTest extends TestCase {
       assert server != null;
 
       // Start test client and test server.
-      TcpProxyServer proxy = new TcpProxyServer("TestProxyServer");
+      TcpProxyServer proxy = new TcpProxyServer("TransferAccelerator");
       TcpTunnel tunnel = new TcpTunnel(
                              client,
                              server,
