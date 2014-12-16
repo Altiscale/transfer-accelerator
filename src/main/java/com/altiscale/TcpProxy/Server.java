@@ -124,6 +124,11 @@ public class Server {
     byteRateCnt.incrementBy(amount);
   }
 
+  public boolean isHealthy() {
+    if (null == sshProcess) return true;
+    return sshProcess.isRunning();
+  }
+
   public void establishTunnel(Socket clientSocket) throws java.io.IOException {
     requestCnt.increment();
     Socket serverSocket = new Socket(hostPort.host, hostPort.port);

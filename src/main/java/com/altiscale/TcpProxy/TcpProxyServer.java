@@ -229,7 +229,8 @@ public class TcpProxyServer implements ServerWithStats {
     htmlServerStats += "<table>\r\n";
     htmlServerStats += "<tr><td><b>counters</b></td><td><b>values</b></td></tr>\r\n";
 
-    htmlServerStats += "<tr><td>Open connections</td><td>" + (openedConnections - closedConnections) +
+    htmlServerStats += "<tr><td>Open connections</td><td>" +
+                       (openedConnections - closedConnections) +
                        "</td></tr>\r\n";
 
     htmlServerStats += "<tr><td><b>server</b> byte rate</td><td>" +
@@ -250,8 +251,9 @@ public class TcpProxyServer implements ServerWithStats {
     }
 
     for (Server server : serverList) {
-      htmlServerStats += "<tr><td><b>" + server.hostPort.toString() + "</b> failed connections </td><td>" +
-                         "<table><tr>" +
+      htmlServerStats += "<tr><td><b>" + server.hostPort.toString() + "</b>" +
+                         " failed connections </td>" +
+                         "<td><table><tr>" +
                          "<td>" + server.failedCnt.getLastSecondCnt() + " /s</td>" +
                          "<td>" + server.failedCnt.getLastMinuteCnt() + " /min</td>" +
                          "<td>" + server.failedCnt.getLastHourCnt() + " /h</td>" +
@@ -265,7 +267,25 @@ public class TcpProxyServer implements ServerWithStats {
                        "</td></tr>\r\n";
     htmlServerStats += "</table>\r\n";
 
+    htmlServerStats += "Healthy servers " + getHealthyServerCnt() + " out of " + serverList.size();
+
     return htmlServerStats;
+  }
+
+  @Override
+  public String getServerHealthHtml() {
+    if (0 != getHealthyServerCnt()) return "OK";
+    else return "NOT OK";
+  }
+
+  private int getHealthyServerCnt() {
+    int healthyCnt = 0;
+    for (Server server : serverList) {
+      if (server.isHealthy()) {
+        healthyCnt++;
+      }
+    }
+    return healthyCnt;
   }
 
   public TcpProxyServer(String name) {
