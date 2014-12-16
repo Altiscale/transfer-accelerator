@@ -115,7 +115,11 @@ class ProxyConfiguration {
   }
 
   public void parseServerStringAndAdd(String server) throws URISyntaxException {
-    serverHostPortList.add(parseServerString(server));
+    HostPort hostPort = parseServerString(server);
+    if (hostPort.port == -1) {
+      throw new URISyntaxException(server, "No port specified for server in server list.");
+    }
+    serverHostPortList.add(hostPort);
   }
 }
 
@@ -385,8 +389,8 @@ public class TcpProxyServer implements ServerWithStats {
 
     options.addOption(OptionBuilder.withLongOpt("load_balancer")
                                    .withArgName("LOAD_BALANCER")
-                                   .withDescription("Load balancing algorithm. Options: RoundRobin" +
-                                                    ", LeastUsed, UniformRandom.")
+                                   .withDescription("Load balancing algorithm. Options: " +
+                                                    " RoundRobin, LeastUsed, UniformRandom.")
                                    .hasArg()
                                    .create('b'));
 
@@ -433,16 +437,18 @@ public class TcpProxyServer implements ServerWithStats {
   }
 
   public static void printHelp(Options options) {
-    String header = "Start a proxy that listens on <PORT> and forwards " +
+    String header = "Connects clients to multiple replicas of the same server." +
+                    "It can also setup multiple ssh tunnels via jumphost to a single server" +
+                    "Listens on <PORT> and forwards " +
                     "incomming connections to " +
                     "<HOST1:PORT1> <HOST2:PORT2> ...\n\n";
     String footer = "";
     HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("tcpProxy", header, options, footer, true);
+    formatter.printHelp("TransferAccelerator", header, options, footer, true);
   }
 
   public static void main (String[] args) {
-    TcpProxyServer proxy = new TcpProxyServer("TcpProxy");
+    TcpProxyServer proxy = new TcpProxyServer("TransferAccelerator");
 
     // Create the options.
     Options options = getCommandLineOptions();
