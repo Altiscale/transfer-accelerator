@@ -80,7 +80,7 @@ public class Server {
     }
 
     // Start in foreground, but not interactive.
-    sshTunnelCmd += " -n -N -L ";
+    sshTunnelCmd += " -n -N -L";
     if (null != jumphost.credentials) {
       sshTunnelCmd += " -i " + jumphost.credentials;
     }
@@ -89,9 +89,9 @@ public class Server {
     // This would support establishing tunnels from localhost or some other machine.
     // NOTE(zoran): conenction between proxy and these machines would not be encrypted by
     // our proxy.
-    sshTunnelCmd += hostPort.port + ":" + jumphost.server.host + ":" + jumphost.server.port;
+    sshTunnelCmd += " " + hostPort.port + ":" + jumphost.server.host + ":" + jumphost.server.port;
     if (null != jumphost.user) {
-      sshTunnelCmd += "-l " + jumphost.user;
+      sshTunnelCmd += " -l " + jumphost.user;
     }
     if (-1 != jumphost.sshd.port) {
       sshTunnelCmd += " -p " + jumphost.sshd.port;
