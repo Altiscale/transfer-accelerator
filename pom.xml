@@ -4,11 +4,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.altiscale</groupId>
-  <artifactId>TcpProxy</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <artifactId>TransferAccelerator</artifactId>
+  <version>0.0.1</version>
   <packaging>jar</packaging>
 
-  <name>TcpProxy</name>
+  <name>TransferAccelerator</name>
 
   <properties>
     <maven.dependency.version>2.5.1</maven.dependency.version>
