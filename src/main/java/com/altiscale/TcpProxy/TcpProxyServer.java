@@ -418,7 +418,8 @@ public class TcpProxyServer implements ServerWithStats {
     options.addOption(OptionBuilder.withLongOpt("jumphost_server")
         .withArgName("JHSERVER:JHS_PORT")
         .withDescription("Jumphost server behind the firewall to connect all servers using: " +
-            "SSH_BINARY -i ~/.ssh/id_rsa -n -N -L PORT:JHSERVER:JHS_PORT -l USER -p JH_PORT JUMPHOST")
+            "SSH_BINARY -i ~/.ssh/id_rsa -n -N -L PORT:JHSERVER:JHS_PORT -l USER " +
+            "-p JH_PORT JUMPHOST")
         .hasArg()
         .create('y'));
 
