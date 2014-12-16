@@ -6,6 +6,8 @@
 
 package com.altiscale.TcpProxy;
 
+import com.altiscale.TcpProxy.HostPort;
+import com.altiscale.TcpProxy.Server;
 import com.altiscale.TcpProxy.TcpTunnel;
 import org.apache.log4j.BasicConfigurator;
 
@@ -116,8 +118,10 @@ public class TcpTunnelTest extends TestCase {
 
       // Start test client and test server.
       TcpProxyServer proxy = new TcpProxyServer("TestProxyServer");
-      TcpTunnel tunnel = new TcpTunnel(client, server,
-          proxy. new Server(proxy. new HostPort("host", 1111)));
+      TcpTunnel tunnel = new TcpTunnel(
+                             client,
+                             server,
+                             new Server(new HostPort("host", 1111)));
       tunnel.spawnTunnelThreads();
       while (!client.isClosed() || !server.isClosed()) {
         Thread.yield();

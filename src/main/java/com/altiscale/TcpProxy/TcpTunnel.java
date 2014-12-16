@@ -25,6 +25,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 import com.altiscale.Util.SecondMinuteHourCounter;
+import com.altiscale.TcpProxy.Server;
 
 public class TcpTunnel {
   // log4j logger.
@@ -42,7 +43,7 @@ public class TcpTunnel {
   // Server-to-Client one-directional tunnel.
   OneDirectionTunnel serverClient;
 
-  private TcpProxyServer.Server server;
+  private Server server;
 
   // We are just a proxy. We create two pipes, proxy all data and whoever closes the
   // connection first our job is to simply close the other end as well.
@@ -55,7 +56,7 @@ public class TcpTunnel {
 
     private SecondMinuteHourCounter byteRateCnt;
 
-    private TcpProxyServer.Server proxyServer;
+    private Server proxyServer;
 
     /**
      *  OneDirectionalTunnel is responsible for reading on its source socket and writing
@@ -68,7 +69,7 @@ public class TcpTunnel {
      *                      closed connections per server.
      */
     public OneDirectionTunnel(Socket source, Socket destination, String name,
-                              TcpProxyServer.Server proxyServer) {
+                              Server proxyServer) {
       threadName = name;
       thread = null;
       sourceSocket = source;
@@ -161,7 +162,7 @@ public class TcpTunnel {
    *  @param  server  Socket connected to server selected for this client by proxy
    */
   public TcpTunnel(Socket client, Socket server,
-                   TcpProxyServer.Server proxyServer) {
+                   Server proxyServer) {
     clientSocket = client;
     serverSocket = server;
 
