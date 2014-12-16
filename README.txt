@@ -1,5 +1,5 @@
-TcpProxy
-========
+TransferAccelerator
+===================
 
 TransferAccelerator is a utility to connect clients to multiple replicas of the same server.
 Users can also use TransferAccelerator to setup multiple ssh tunnels via jump-host to a single
