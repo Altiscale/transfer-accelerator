@@ -12,7 +12,7 @@ To build TransferAccelerator you need to first install JDK and maven. You can th
 
 mvn package
 
-Maven Jar file  located in target/
+After building, maven stores Jar file in target/ subdirectory.
 
 
 Testing:
