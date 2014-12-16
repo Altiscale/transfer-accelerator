@@ -40,11 +40,34 @@ public class ServerStatus implements Runnable {
       InetSocketAddress addr = new InetSocketAddress(port);
       HttpServer httpServer = HttpServer.create(addr, 0);
       httpServer.createContext("/stats", new StatsHandler(serverWithStats));
+      httpServer.createContext("/health", new HealthHandler(serverWithStats));
       httpServer.start();
       LOG.info("Started HttpServer accessible at localhost:" + port + "/stats");
     } catch (IOException e) {
       LOG.error("Could not start HttpServer. " + e.getMessage());
       System.exit(1);
+    }
+  }
+
+  class HealthHandler implements HttpHandler {
+    ServerWithStats serverWithStats;
+
+    public HealthHandler(ServerWithStats server) {
+      this.serverWithStats = server;
+    }
+
+    public void handle(HttpExchange exchange) throws IOException {
+      String requestMethod = exchange.getRequestMethod();
+      if (requestMethod.equalsIgnoreCase("GET")) {
+        String response = serverWithStats.getServerHealthHtml();
+        Headers responseHeaders = exchange.getResponseHeaders();
+        responseHeaders.set("Content-Type", "text/html");
+        exchange.sendResponseHeaders(200, response.getBytes().length);
+        OutputStream responseBody = exchange.getResponseBody();
+        Headers requestHeaders = exchange.getRequestHeaders();
+        responseBody.write(response.getBytes());
+        responseBody.close();
+      }
     }
   }
 

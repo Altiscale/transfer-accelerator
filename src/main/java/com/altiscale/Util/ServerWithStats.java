@@ -9,5 +9,6 @@ package com.altiscale.Util;
 
 public interface ServerWithStats {
   public String getServerStatsHtml();
+  public String getServerHealthHtml();
   public String getServerName();
 }
