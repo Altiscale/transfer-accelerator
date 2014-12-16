@@ -2,7 +2,7 @@
  *  Author: Zoran Dimitrijevic <zoran@altiscale.com>
  *
  *  Server class holds host:port of where we expect TcpTunnel's servers to run and
- *  optional jumphost yhrough which we setup ssh tunnels.
+ *  optional jumphost through which we setup ssh tunnels.
  **/
 
 package com.altiscale.TcpProxy;
@@ -87,7 +87,7 @@ public class Server {
 
     // TODO(zoran): use hostPort.host to first ssh to it and establish a tunnel from there.
     // This would support establishing tunnels from localhost or some other machine.
-    // NOTE(zoran): conenction between proxy and these machines would not be encrypted by
+    // NOTE(zoran): connection between proxy and these machines would not be encrypted by
     // our proxy.
     sshTunnelCmd += " " + hostPort.port + ":" + jumphost.server.host + ":" + jumphost.server.port;
     if (null != jumphost.user) {
