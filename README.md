@@ -69,7 +69,7 @@ hdfs dfs -ls webhdfs://localhost:14000/
 
 TransferAccelerator publishes status via http interface running by default on port 1982 (can be overriden using -w,--webstatus_port <STATUS_PORT> command line flag).
 
-You can access this interface in your browser at http://localhost:1982/stats
+You can access this interface in your browser at * http://localhost:1982/stats *
 
-It also prints health status on http://localhost:1982/health
+It also prints health status on * http://localhost:1982/health *
 
