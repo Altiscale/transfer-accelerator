@@ -117,9 +117,9 @@ public class TcpTunnel {
           if (cnt > 0) {
             output.write(buffer, 0, cnt);
 
+            // NOTE: if this becomes expensive, we can increment counter and flush less often.
             byteRateCnt.incrementBy(cnt);
             proxyServer.incrementByteRateBy(cnt);
-
             output.flush();
           }
         } while (cnt >= 0);

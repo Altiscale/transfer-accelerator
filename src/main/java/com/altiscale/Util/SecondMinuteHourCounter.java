@@ -30,7 +30,7 @@ class AltiTimer {
 
 class SlidingWindowCounter {
   /** This class implements a sparse sliding window using a set of buckets kept in a Deque.
-   *  @param numBuckets Number of buckets per each interval (more buckets, higher precision) 
+   *  @param numBuckets Number of buckets per each interval (more buckets, higher precision)
    */
 
   private long counter;
@@ -113,14 +113,32 @@ public class SecondMinuteHourCounter {
   private long numBuckets;
   private String name;
 
+  /*
+   *  @param name  Human-readable name for this counter.
+   */
   public SecondMinuteHourCounter(String name) {
     this(new AltiTimer(), name, 100L);
   }
 
+  /*
+   *  Handy constructor to use in tests when we want to use custom timer.
+   *
+   *  @param timer  Custom timer.
+   *  @param name   Human-readable name for this counter.
+   */
   public SecondMinuteHourCounter(AltiTimer timer, String name) {
     this(timer, name, 100L);
   }
 
+  /*
+   *  SecondMinuteHourCounter is a class that keeps total counter as well as
+   *  approximate counters for last second, minute and hour.
+   *
+   *  @param timer       Custom timer.
+   *  @param name        Human-readable name for this counter.
+   *  @param numBuckets  Number of buckets per interval (second, minute, and hour).
+   *                     More buckets, higher precision.
+   */
   public SecondMinuteHourCounter(AltiTimer timer, String name, Long numBuckets) {
     this.name = name;
     this.totalCounter = 0;
