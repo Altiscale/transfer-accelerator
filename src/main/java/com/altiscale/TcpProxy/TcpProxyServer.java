@@ -473,13 +473,13 @@ public class TcpProxyServer implements ServerWithStats {
       LogManager.getRootLogger().setLevel(Level.DEBUG);
     }
 
-    int listeningPort = 12345; // default value
+    int listeningPort = 48138; // default value
     if (commandLine.hasOption("port")) {
        listeningPort = Integer.parseInt(commandLine.getOptionValue("port"));
     }
     ProxyConfiguration conf = new ProxyConfiguration(listeningPort);
 
-    int statusPort = 1982;
+    int statusPort = 48139;
     if (commandLine.hasOption("webstatus_port")) {
       statusPort =  Integer.parseInt(commandLine.getOptionValue("webstatus_port"));
     }
