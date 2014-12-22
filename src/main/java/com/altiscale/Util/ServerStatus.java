@@ -40,7 +40,7 @@ public class ServerStatus implements Runnable {
       InetSocketAddress addr = new InetSocketAddress(port);
       HttpServer httpServer = HttpServer.create(addr, 0);
       httpServer.createContext("/stats", new StatsHandler(serverWithStats));
-      httpServer.createContext("/health", new HealthHandler(serverWithStats));
+      httpServer.createContext("/admin", new HealthHandler(serverWithStats));
       httpServer.start();
       LOG.info("Started HttpServer accessible at localhost:" + port + "/stats");
     } catch (IOException e) {
@@ -59,10 +59,16 @@ public class ServerStatus implements Runnable {
     public void handle(HttpExchange exchange) throws IOException {
       String requestMethod = exchange.getRequestMethod();
       if (requestMethod.equalsIgnoreCase("GET")) {
+        boolean isHealthy = serverWithStats.getServerHealth();
         String response = serverWithStats.getServerHealthHtml();
         Headers responseHeaders = exchange.getResponseHeaders();
-        responseHeaders.set("Content-Type", "text/html");
-        exchange.sendResponseHeaders(200, response.getBytes().length);
+        if (isHealthy) {
+          responseHeaders.set("Content-Type", "text/html");
+          exchange.sendResponseHeaders(200, response.getBytes().length);
+        } else {
+          responseHeaders.set("Content-Type", "text/html");
+          exchange.sendResponseHeaders(500, response.getBytes().length);
+        }
         OutputStream responseBody = exchange.getResponseBody();
         Headers requestHeaders = exchange.getRequestHeaders();
         responseBody.write(response.getBytes());

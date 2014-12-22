@@ -50,7 +50,7 @@ java -jar target/TransferAccelerator-0.0.1-jar-with-dependencies.jar -p 14000 -s
 java -jar target/TransferAccelerator-0.0.1-jar-with-dependencies.jar -p 14000 -s localhost:15000 -j jumphost-sshd:22 -y httpfs-server:14000
 ```
 
-After starting TransferAccelerator, you can use localhost:12345 as your httpfs-server:
+After starting TransferAccelerator, you can use localhost:14000 as your httpfs-server:
 hdfs dfs -ls webhdfs://localhost:14000/
 
 
@@ -60,16 +60,15 @@ hdfs dfs -ls webhdfs://localhost:14000/
 java -jar target/TransferAccelerator-0.0.1-jar-with-dependencies.jar -p 14000 -s localhost:15000 localhost:15001 localhost:15002 -j sshd-host:22 -y httpfs-server:14000
 ```
 
-After starting TransferAccelerator, you can use localhost:12345 as your httpfs-server:
+After starting TransferAccelerator, you can use localhost:14000 as your httpfs-server:
 ```
 hdfs dfs -ls webhdfs://localhost:14000/
 ```
 
 ##Monitoring:
 
-TransferAccelerator publishes status via http interface running by default on port 1982 (can be overriden using -w,--webstatus_port <STATUS_PORT> command line flag).
+TransferAccelerator publishes status via http interface running by default on port 48139 (can be overriden using -w,--webstatus_port <STATUS_PORT> command line flag).
 
-You can access this interface in your browser at *http://localhost:1982/stats*
+You can access this interface in your browser at *http://localhost:48139/stats*
 
-It also prints health status on *http://localhost:1982/health*
-
+It also prints health status and version on *http://localhost:48139/admin*

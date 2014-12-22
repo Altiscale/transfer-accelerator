@@ -277,8 +277,14 @@ public class TcpProxyServer implements ServerWithStats {
   }
 
   @Override
+  public boolean getServerHealth() {
+    return 0 != getHealthyServerCnt();
+  }
+
+  @Override
   public String getServerHealthHtml() {
-    if (0 != getHealthyServerCnt()) return "OK";
+    // add server version
+    if (getServerHealth()) return "OK";
     else return "NOT OK";
   }
 
