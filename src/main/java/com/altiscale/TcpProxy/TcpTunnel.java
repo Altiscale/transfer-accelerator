@@ -117,13 +117,9 @@ public class TcpTunnel {
           if (cnt > 0) {
             output.write(buffer, 0, cnt);
 
-            // TODO(cosmin) check if this slows things down.
             byteRateCnt.incrementBy(cnt);
             proxyServer.incrementByteRateBy(cnt);
 
-            // We don't want to buffer too much in the proxy. So, flush the output.
-            // TODO(zoran): this might cause some performance issues. Experiment with
-            // buffer size and maybe flush less often.
             output.flush();
           }
         } while (cnt >= 0);
