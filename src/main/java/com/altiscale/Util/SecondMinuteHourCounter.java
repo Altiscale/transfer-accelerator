@@ -14,8 +14,6 @@
  * up to 1000 per second. When we need faster increments we use the incrementBy to do it in bulk.
 **/
 
-//TODO(cosmin) to add java style comments ASAP
-
 package com.altiscale.Util;
 
 import java.util.ArrayDeque;
