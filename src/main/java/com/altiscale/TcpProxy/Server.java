@@ -91,16 +91,18 @@ public class Server {
       sshTunnelCmd = jumphost.sshBinary;
     }
 
-    // Start in foreground, but not interactive.
-    sshTunnelCmd += " -n -N -L";
     if (null != jumphost.credentials) {
       sshTunnelCmd += " -i " + jumphost.credentials;
     }
+    if (jumphost.compression) {
+      sshTunnelCmd += " -C";
+    }
+    if (null != jumphost.ciphers) {
+      sshTunnelCmd += " -c " + jumphost.ciphers;
+    }
 
-    // TODO(zoran): use hostPort.host to first ssh to it and establish a tunnel from there.
-    // This would support establishing tunnels from localhost or some other machine.
-    // NOTE(zoran): connection between proxy and these machines would not be encrypted by
-    // our proxy.
+    // Start in foreground, but not interactive.
+    sshTunnelCmd += " -n -N -L";
     sshTunnelCmd += " " + hostPort.port + ":" + jumphost.server.host + ":" + jumphost.server.port;
     if (null != jumphost.user) {
       sshTunnelCmd += " -l " + jumphost.user;

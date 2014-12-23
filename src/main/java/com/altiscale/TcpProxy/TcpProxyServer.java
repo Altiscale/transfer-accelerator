@@ -66,6 +66,8 @@ class JumpHost {
   HostPort server;
   String user;
   String credentials;
+  boolean compression;
+  String ciphers;
   String sshBinary;
 
   /*  @param sshd         host:port of machine to use for establishing ssh tunnel to
@@ -77,17 +79,24 @@ class JumpHost {
    *                      sshd is running.
    *  @param user         Optional username we want to use for ssh (to override the default).
    *  @param credentials  Optional path to a file with ssh credentials to use with ssh -i
+   *  @param compression  If true, add optional -C flag to ssh tunnel command to turn on
+   *                      compression.
+   *  @param ciphers      Optional string for ssh -c command option for cipher specs.
    *  @param sshBinary    Optional binary path and name to use instead of default 'ssh'.
    */
   public JumpHost(HostPort sshd,
                   HostPort server,
                   String user,
                   String credentials,
+                  boolean compression,
+                  String ciphers,
                   String sshBinary) {
     this.sshd = sshd;
     this.server = server;
     this.user = user;
     this.credentials = credentials;
+    this.compression = compression;
+    this.ciphers = ciphers;
     this.sshBinary = sshBinary;
   }
 }
@@ -438,6 +447,14 @@ public class TcpProxyServer implements ServerWithStats {
         .hasArg()
         .create('i'));
 
+    options.addOption("C", "jumphost_compression", false, "Enable compression in ssh tunnels.");
+
+    options.addOption(OptionBuilder.withLongOpt("jumphost_ciphers")
+        .withArgName("CIPHER_SPEC")
+        .withDescription("Select ciphers for ssh tunnel encryption (ssh -c option).")
+        .hasArg()
+        .create('c'));
+
     options.addOption(OptionBuilder.withLongOpt("jumphost")
         .withArgName("JUMPHOST:JH_PORT")
         .withDescription("Connect to servers via ssh tunnel to jumphost in jumphost:port format. " +
@@ -591,6 +608,28 @@ public class TcpProxyServer implements ServerWithStats {
       jumphostCredentials = commandLine.getOptionValue("jumphost_credentials");
     }
 
+    // Maybe set jumphostCompression if we have a jumphost.
+    boolean jumphostCompression = false;
+    if (commandLine.hasOption("jumphost_compression")) {
+      if (!commandLine.hasOption("jumphost")) {
+        LOG.error("You need to specify jumphost if you specify jumphost_compression.");
+        printHelp(options);
+        System.exit(1);
+      }
+      jumphostCompression = true;
+    }
+
+    // Maybe add jumphostCiphers if we have a jumphost.
+    String jumphostCiphers = null;
+    if (commandLine.hasOption("jumphost_ciphers")) {
+      if (!commandLine.hasOption("jumphost")) {
+        LOG.error("You need to specify jumphost if you specify jumphost_ciphers.");
+        printHelp(options);
+        System.exit(1);
+      }
+      jumphostCiphers = commandLine.getOptionValue("jumphost_ciphers");
+    }
+
     // Maybe add sshBinary if we have a jumphost.
     String sshBinary = null;
     if (commandLine.hasOption("ssh_binary")) {
@@ -606,6 +645,7 @@ public class TcpProxyServer implements ServerWithStats {
     if (null != jumphostSshd && null != jumphostServer) {
       conf.jumphost = new JumpHost(jumphostSshd, jumphostServer,
                                    jumphostUser, jumphostCredentials,
+                                   jumphostCompression, jumphostCiphers,
                                    sshBinary);
     }
 
