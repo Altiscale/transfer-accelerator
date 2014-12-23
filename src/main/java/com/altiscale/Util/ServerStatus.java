@@ -75,8 +75,6 @@ public class ServerStatus implements Runnable {
         responseBody.close();
       }
     }
-
-
   }
 
   class StatsHandler implements HttpHandler {

@@ -60,7 +60,14 @@ hdfs dfs -ls webhdfs://localhost:14000/
 java -jar target/TransferAccelerator-0.0.1-jar-with-dependencies.jar -p 14000 -s localhost:15000 localhost:15001 localhost:15002 -j sshd-host:22 -y httpfs-server:14000
 ```
 
-After starting TransferAccelerator, you can use localhost:14000 as your httpfs-server:
+After starting TransferAccelerator, you can use localhost:14000 as your httpfs-server.
+
+Here's an example if you don't have the Hadoop RPMs installed locally:
+```
+curl 'localhost:14000/webhdfs/v1/user?user.name=hdfs&op=LISTSTATUS'
+```
+
+And one example with local access to Hadoop:
 ```
 hdfs dfs -ls webhdfs://localhost:14000/
 ```
