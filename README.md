@@ -67,8 +67,8 @@ hdfs dfs -ls webhdfs://localhost:14000/
 
 ##Monitoring:
 
-TransferAccelerator publishes status via http interface running by default on port 48139 (can be overriden using -w,--webstatus_port <STATUS_PORT> command line flag).
+TransferAccelerator publishes status via http interface running by default on port 48138 (can be overriden using -w,--webstatus_port <STATUS_PORT> command line flag).
 
-You can access this interface in your browser at *http://localhost:48139/stats*
+You can access this interface in your browser at *http://localhost:48138/stats*
 
-It also prints health status and version on *http://localhost:48139/admin*
+It also prints health status and version on *http://localhost:48138/admin*

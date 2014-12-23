@@ -293,15 +293,8 @@ public class TcpProxyServer implements ServerWithStats {
   }
 
   @Override
-  public boolean getServerHealth() {
+  public boolean isHealthy() {
     return 0 != getHealthyServerCnt();
-  }
-
-  @Override
-  public String getServerHealthHtml() {
-    // add server version
-    if (getServerHealth()) return "OK";
-    else return "NOT OK";
   }
 
   private int getHealthyServerCnt() {
@@ -516,13 +509,13 @@ public class TcpProxyServer implements ServerWithStats {
       LogManager.getRootLogger().setLevel(Level.DEBUG);
     }
 
-    int listeningPort = 48138; // default value
+    int listeningPort = 14000; // default value
     if (commandLine.hasOption("port")) {
        listeningPort = Integer.parseInt(commandLine.getOptionValue("port"));
     }
     ProxyConfiguration conf = new ProxyConfiguration(listeningPort);
 
-    int statusPort = 48139;
+    int statusPort = 48138;
     if (commandLine.hasOption("webstatus_port")) {
       statusPort =  Integer.parseInt(commandLine.getOptionValue("webstatus_port"));
     }

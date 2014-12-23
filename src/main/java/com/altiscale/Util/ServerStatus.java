@@ -59,9 +59,9 @@ public class ServerStatus implements Runnable {
     public void handle(HttpExchange exchange) throws IOException {
       String requestMethod = exchange.getRequestMethod();
       if (requestMethod.equalsIgnoreCase("GET")) {
-        boolean isHealthy = serverWithStats.getServerHealth();
-        String response = serverWithStats.getServerHealthHtml();
+        boolean isHealthy = serverWithStats.isHealthy();
         Headers responseHeaders = exchange.getResponseHeaders();
+        String response = "{ \"version\" : \"" + serverWithStats.getVersion() + "\"}";
         if (isHealthy) {
           responseHeaders.set("Content-Type", "text/html");
           exchange.sendResponseHeaders(200, response.getBytes().length);
@@ -75,6 +75,8 @@ public class ServerStatus implements Runnable {
         responseBody.close();
       }
     }
+
+
   }
 
   class StatsHandler implements HttpHandler {
