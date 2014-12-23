@@ -19,14 +19,18 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Level;
 
+import java.io.InputStream;
 import java.io.IOException;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.ServerSocket;
 import java.net.Socket;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Random;
 
 import com.altiscale.Util.ExecLoop;
@@ -204,6 +208,18 @@ public class TcpProxyServer implements ServerWithStats {
   private LoadBalancer loadBalancer;
 
   private String name;
+
+  private String version;
+
+  @Override
+  public void setVersion(String version) {
+    this.version = version;
+  }
+
+  @Override
+  public String getVersion() {
+    return version;
+  }
 
   @Override
   public String getServerStatsHtml() {
@@ -455,6 +471,27 @@ public class TcpProxyServer implements ServerWithStats {
 
   public static void main (String[] args) {
     TcpProxyServer proxy = new TcpProxyServer("TransferAccelerator");
+
+
+    String mvnPropsPath = "/META-INF/maven/com.altiscale/TransferAccelerator/pom.properties";
+    Properties props = new Properties();
+
+    Class cls = proxy.getClass();
+    InputStream in = cls.getResourceAsStream(mvnPropsPath);
+    try {
+      props.load(in);
+      proxy.setVersion(props.getProperty("version", "unknown"));
+    } catch (Exception e) {
+      LOG.info(e.getMessage());
+    } finally  {
+      try {
+        in.close();
+      } catch (Exception e){
+        LOG.info(e.getMessage());
+        /*ignore*/
+      }
+    }
+    LOG.info("Version " + proxy.getVersion());
 
     // Create the options.
     Options options = getCommandLineOptions();

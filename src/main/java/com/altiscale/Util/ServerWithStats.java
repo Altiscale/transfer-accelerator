@@ -12,4 +12,6 @@ public interface ServerWithStats {
   public boolean getServerHealth();
   public String getServerHealthHtml();
   public String getServerName();
+  public String getVersion();
+  public void setVersion(String version);
 }
