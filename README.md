@@ -62,9 +62,9 @@ java -jar target/TransferAccelerator-0.0.1-jar-with-dependencies.jar -p 14000 -s
 
 After starting TransferAccelerator, you can use localhost:14000 as your httpfs-server.
 
-Here's an example if you don't have the Hadoop RPMs installed locally:
+Here's an example if you don't have the Hadoop RPMs installed locally and the local user has an account on the cluster:
 ```
-curl 'localhost:14000/webhdfs/v1/user?user.name=hdfs&op=LISTSTATUS'
+curl "localhost:14000/webhdfs/v1/user?user.name=$USER&op=LISTSTATUS"
 ```
 
 And one example with local access to Hadoop:
