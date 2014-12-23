@@ -1,17 +1,18 @@
 /**
- * Copyright Altiscale 2014
- * Author: Zoran Dimitrijevic <zoran@altiscale.com>
+ * Copyright 2014 Altiscale <zoran@altiscale.com>
  *
- * TcpProxyServer is a server that manages one listening port and for each incoming TCP
- * connection to that port it creates another TCP connection to one of pre-set destinations
- * specified by an array of host:port (string:int) pairs.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Goal of TcpProxy is to simply tunnel all bytes from incoming socket to its destination socket,
- * trying to load-balance so that each destination connection transfers similar amount of data.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Destinations are usually ssh-tunnels connected to a single destination host:port.
- *
- **/
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 
 package com.altiscale.TcpProxy;
 
@@ -127,6 +128,16 @@ class ProxyConfiguration {
   }
 }
 
+/** TcpProxyServer is a server that manages one listening port and for each incoming TCP
+ * connection to that port it creates another TCP connection to one of pre-set destinations
+ * specified by an array of host:port (string:int) pairs.
+ *
+ * Goal of TcpProxy is to simply tunnel all bytes from incoming socket to its destination socket,
+ * trying to load-balance so that each destination connection transfers similar amount of data.
+ *
+ * Destinations are usually ssh-tunnels connected to a single destination host:port.
+ *
+ **/
 public class TcpProxyServer implements ServerWithStats {
 
   protected interface LoadBalancer {

@@ -1,18 +1,18 @@
 /**
- * Copyright Altiscale 2014
- * Author: Cosmin Negruseri <cosmin@altiscale.com>
+ * Copyright 2014 Altiscale <cosmin@altiscale.com>
  *
- * SecondMinuteHourCounter implements three counters over a second, a minute and an hour sliding
- * time windows and a total count.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This class is usefull in server side debugging and performance analysis. For example we can use
- * it to keep counters for how many requests are handled by a web server or for measuring the
- * throughput of a network transfer.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * The methods used are increment and incrementBy, they aren't very light weight so using them
- * in a tight loop might slow performance. The use case for increment is somewhat infrequent requests
- * up to 1000 per second. When we need faster increments we use the incrementBy to do it in bulk.
-**/
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 
 package com.altiscale.Util;
 
@@ -104,6 +104,18 @@ class SlidingWindowCounter {
   }
 }
 
+/**
+ * SecondMinuteHourCounter implements three counters over a second, a minute and an hour sliding
+ * time windows and a total count.
+ *
+ * This class is usefull in server side debugging and performance analysis. For example we can use
+ * it to keep counters for how many requests are handled by a web server or for measuring the
+ * throughput of a network transfer.
+ *
+ * The methods used are increment and incrementBy, they aren't very light weight so using them
+ * in a tight loop might slow performance. The use case for increment is somewhat infrequent requests
+ * up to 1000 per second. When we need faster increments we use the incrementBy to do it in bulk.
+**/
 public class SecondMinuteHourCounter {
 
   private SlidingWindowCounter secondCounter, minuteCounter, hourCounter;

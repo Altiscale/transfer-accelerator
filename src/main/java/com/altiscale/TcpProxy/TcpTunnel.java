@@ -1,17 +1,18 @@
 /**
- * Copyright Altiscale 2014
- * Author: Zoran Dimitrijevic <zoran@altiscale.com>
+ * Copyright 2014 Altiscale <zoran@altiscale.com>
  *
- * TcpTunnel is a class to handle data transfer between incomming-outgoing socket pairs (tunnels)
- * and a threadpool that serves all these existing tunnels.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Goal of TcpTunnel is to simply tunnel all data between incoming sockets and their destination
- * sockets, trying to load-balance so that each destination connection transfers data with equal
- * rate.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Destination ports are usually ssh-tunnels to a same service.
- *
- **/
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 
 package com.altiscale.TcpProxy;
 
@@ -27,6 +28,17 @@ import java.util.ArrayList;
 import com.altiscale.Util.SecondMinuteHourCounter;
 import com.altiscale.TcpProxy.Server;
 
+/**
+ * TcpTunnel is a class to handle data transfer between incomming-outgoing socket pairs (tunnels)
+ * and a threadpool that serves all these existing tunnels.
+ *
+ * Goal of TcpTunnel is to simply tunnel all data between incoming sockets and their destination
+ * sockets, trying to load-balance so that each destination connection transfers data with equal
+ * rate.
+ *
+ * Destination ports are usually ssh-tunnels to a same service.
+ *
+ */
 public class TcpTunnel {
   // log4j logger.
   private static Logger LOG = Logger.getLogger("TransferAccelerator");
