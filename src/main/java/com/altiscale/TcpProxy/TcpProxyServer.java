@@ -231,6 +231,10 @@ public class TcpProxyServer implements ServerWithStats {
 
   private String version;
 
+  // transfer-accelerator uses by default ports in the range 48139 - 48160
+  private static final int START_PORT_RANGE = 48139;
+  private static final int MAX_NUM_SERVERS = 22;
+
   @Override
   public void setVersion(String version) {
     this.version = version;
@@ -414,13 +418,18 @@ public class TcpProxyServer implements ServerWithStats {
                                    .create('w'));
 
     options.addOption(OptionBuilder.withLongOpt("servers")
-                                   .isRequired()
                                    .withArgName("HOST1:PORT1> <HOST2:PORT2")
                                    .withDescription("Server/servers for the proxy to connect to" +
                                                     " in host:port format.")
                                    .hasArgs()
                                    .withValueSeparator(' ')
                                    .create('s'));
+
+    options.addOption(OptionBuilder.withLongOpt("num_servers")
+                                   .withArgName("NUM_SERVERS")
+                                   .withDescription("Number of servers to instatntiate.")
+                                   .hasArgs()
+                                   .create('n'));
 
     options.addOption(OptionBuilder.withLongOpt("load_balancer")
                                    .withArgName("LOAD_BALANCER")
@@ -649,16 +658,47 @@ public class TcpProxyServer implements ServerWithStats {
                                    sshBinary);
     }
 
-    // Add servers.
-    String[] servers = commandLine.getOptionValues("servers");
-    try {
-      for (String server : servers) {
-        conf.parseServerStringAndAdd(server);
-      }
-    } catch (URISyntaxException e) {
-      LOG.error("Server path parsing exception " + e.getMessage());
+    if (!commandLine.hasOption("num_servers") && !commandLine.hasOption("servers")) {
+      LOG.error("You need to specify one of the num_servers or servers flags.");
       printHelp(options);
       System.exit(1);
+    }
+
+    if (commandLine.hasOption("num_servers") && commandLine.hasOption("servers")) {
+      LOG.error("You need to specify one of the num_servers or servers flags, not both.");
+      printHelp(options);
+      System.exit(1);
+    }
+
+
+    if (commandLine.hasOption("num_servers")) {
+      try {
+        int num_servers = Integer.parseInt(commandLine.getOptionValue("num_servers"));
+        if (num_servers > TcpProxyServer.MAX_NUM_SERVERS ) {
+          throw new Exception("Please specify -servers.");
+        }
+        for (int i = 0; i < num_servers; i++) {
+          conf.parseServerStringAndAdd("localhost:" + (TcpProxyServer.START_PORT_RANGE + i));
+        }
+      } catch (Exception e) {
+        LOG.error("num_servers parsing exception " + e.getMessage());
+        printHelp(options);
+        System.exit(1);
+      }
+    }
+
+    if (commandLine.hasOption("servers")) {
+      // Add servers.
+      String[] servers = commandLine.getOptionValues("servers");
+      try {
+        for (String server : servers) {
+          conf.parseServerStringAndAdd(server);
+        }
+      } catch (URISyntaxException e) {
+        LOG.error("Server path parsing exception " + e.getMessage());
+        printHelp(options);
+        System.exit(1);
+      }
     }
 
     proxy.init(conf);
