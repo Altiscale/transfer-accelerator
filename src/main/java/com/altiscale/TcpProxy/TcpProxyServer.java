@@ -670,7 +670,7 @@ public class TcpProxyServer implements ServerWithStats {
       System.exit(1);
     }
 
-
+    // Add servers.
     if (commandLine.hasOption("num_servers")) {
       try {
         int num_servers = Integer.parseInt(commandLine.getOptionValue("num_servers"));
@@ -688,7 +688,6 @@ public class TcpProxyServer implements ServerWithStats {
     }
 
     if (commandLine.hasOption("servers")) {
-      // Add servers.
       String[] servers = commandLine.getOptionValues("servers");
       try {
         for (String server : servers) {
