@@ -690,6 +690,7 @@ public class TcpProxyServer implements ServerWithStats {
       }
     }
 
+    // Maybe set load balancer.
     if (commandLine.hasOption("load_balancer")) {
       HashSet<String> loadBalancers = new HashSet<String>(
           Arrays.asList("RoundRobin", "LeastUsed", "UniformRandom"));
