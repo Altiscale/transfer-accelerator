@@ -24,14 +24,14 @@ import junit.framework.TestSuite;
 class TestTimer extends AltiTimer {
    /** Fake timer class useful in testing */
    long time;
-   
+
    public TestTimer(long time) {
      this.time = time;
    }
    public void setTime(long time) {
      this.time = time;
    }
-   
+
    @Override
    public long currentTimeMillis() {
      return time;
@@ -48,7 +48,7 @@ public class SecondMinuteHourCounterTest extends TestCase {
   public SecondMinuteHourCounterTest(String testName) {
     super(testName);
   }
- 
+
   /**
    * @return the suite of tests being tested
    */
@@ -91,7 +91,7 @@ public class SecondMinuteHourCounterTest extends TestCase {
   public void testExpireAfterOneHour() {
     TestTimer timer = new TestTimer(0);
     SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "TestCounter", 1000L);
-  
+
     counter.increment();
 
     timer.setTime(60 * 60 * 1000 - 1);
@@ -124,8 +124,8 @@ public class SecondMinuteHourCounterTest extends TestCase {
 
     // the two increments are in our 1s window
     timer.setTime(1000);
-    assert counter.getLastSecondCnt() == 101;    
-    
+    assert counter.getLastSecondCnt() == 101;
+
     // first increment is out of the 1s window
     timer.setTime(1500);
     assert counter.getLastSecondCnt() == 100;
@@ -133,22 +133,22 @@ public class SecondMinuteHourCounterTest extends TestCase {
     // second increment is out of the 1s window
     timer.setTime(1501);
     assert counter.getLastSecondCnt() == 0;
-    
+
     // third increment
     timer.setTime(60 * 1000);
     counter.incrementBy(10000);
 
     // all three increments are in the 1min window.
     assert counter.getLastMinuteCnt() == 10101;
-    
+
     // first increment out of the 1min window
     timer.setTime(60 * 1000 + 1);
     assert counter.getLastMinuteCnt() == 10100;
-    
+
     // all increments in the 1h window.
     timer.setTime(60 * 60 * 1000);
     assert counter.getLastHourCnt() == 10101;
-    
+
     // first two increments out of the 1h window.
     timer.setTime(60 * 60 * 1000 + 4000);
     assert counter.getLastHourCnt() == 10000;
@@ -159,24 +159,24 @@ public class SecondMinuteHourCounterTest extends TestCase {
   }
 
   public void testOneBucket() {
-     TestTimer timer = new TestTimer(0);
-     SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "One bucket", 1L);
-     
-     counter.increment();
+    TestTimer timer = new TestTimer(0);
+    SecondMinuteHourCounter counter = new SecondMinuteHourCounter(timer, "One bucket", 1L);
 
-     timer.setTime(999);
-     assert counter.getLastSecondCnt() == 1;
-     timer.setTime(1000);
-     assert counter.getLastSecondCnt() == 1;
-     timer.setTime(1001);
-     assert counter.getLastSecondCnt() == 0;
-     
-     timer.setTime(60 * 1000 - 1);
-     assert counter.getLastMinuteCnt() == 1;
-     timer.setTime(60 * 1000);
-     assert counter.getLastMinuteCnt() == 1;
-     timer.setTime(60 * 1000 + 1);
-     assert counter.getLastMinuteCnt() == 0;
+    counter.increment();
+
+    timer.setTime(999);
+    assert counter.getLastSecondCnt() == 1;
+    timer.setTime(1000);
+    assert counter.getLastSecondCnt() == 1;
+    timer.setTime(1001);
+    assert counter.getLastSecondCnt() == 0;
+
+    timer.setTime(60 * 1000 - 1);
+    assert counter.getLastMinuteCnt() == 1;
+    timer.setTime(60 * 1000);
+    assert counter.getLastMinuteCnt() == 1;
+    timer.setTime(60 * 1000 + 1);
+    assert counter.getLastMinuteCnt() == 0;
   }
 
   public void testFourBuckets() {
