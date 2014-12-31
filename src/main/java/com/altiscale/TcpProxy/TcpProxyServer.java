@@ -105,14 +105,21 @@ class ProxyConfiguration {
   // Port where our clients will connect to.
   int listeningPort;
 
+  // Port where we export web-based status.
+  int statusPort;
+
+  String loadBalancerString;
+
   // List of all our servers.
   ArrayList<HostPort> serverHostPortList;
 
   // JumpHost to use for establishing ssh tunnels to the server. Null if we don't want it.
   JumpHost jumphost;
 
-  public ProxyConfiguration(int port) {
-    listeningPort = port;
+  public ProxyConfiguration() {
+    listeningPort = 14000;              // default value
+    statusPort = 48138;                 // default value
+    loadBalancerString = "RoundRobin";  // default value
     serverHostPortList = new ArrayList<HostPort>();
     jumphost = null;
   }
@@ -339,6 +346,10 @@ public class TcpProxyServer implements ServerWithStats {
   public void init(ProxyConfiguration conf) {
     config = conf;
 
+    // Launch ServerStats thread.
+    new Thread(new ServerStatus(this, config.statusPort)).start();
+
+    // Initialize servers and optional ssh tunnels via jumphost.
     for (HostPort serverHostPort : config.serverHostPortList) {
       Server server = null;
       if (null == config.jumphost) {
@@ -351,6 +362,7 @@ public class TcpProxyServer implements ServerWithStats {
       serverList.add(server);
     }
 
+    // Open our listening port.
     tcpProxyPort = config.listeningPort;
     try {
       tcpProxyService = new ServerSocket(tcpProxyPort);
@@ -359,6 +371,16 @@ public class TcpProxyServer implements ServerWithStats {
       LOG.error("IO exception while establishing proxy service on port " + tcpProxyPort);
       System.exit(1);
     }
+
+    // Set load balancer.
+    if (config.loadBalancerString.equals("LeastUsed")) {
+      loadBalancer = new LeastUsed(getServerList());
+    } else if (config.loadBalancerString.equals("UniformRandom")) {
+      loadBalancer = new UniformRandom(getServerList());
+    } else {
+      loadBalancer = new RoundRobin(getServerList());
+    }
+    setLoadBalancer(loadBalancer);
   }
 
   public ArrayList<Server> getServerList() {
@@ -499,35 +521,7 @@ public class TcpProxyServer implements ServerWithStats {
     formatter.printHelp("TransferAccelerator", header, options, footer, true);
   }
 
-  public static void main (String[] args) {
-    TcpProxyServer proxy = new TcpProxyServer("TransferAccelerator");
-
-
-    String mvnPropsPath = "/META-INF/maven/com.altiscale/TransferAccelerator/pom.properties";
-    Properties props = new Properties();
-
-    Class cls = proxy.getClass();
-    InputStream in = cls.getResourceAsStream(mvnPropsPath);
-    try {
-      props.load(in);
-      proxy.setVersion(props.getProperty("version", "unknown"));
-    } catch (Exception e) {
-      LOG.info(e.getMessage());
-    } finally  {
-      try {
-        in.close();
-      } catch (Exception e){
-        LOG.info(e.getMessage());
-        /*ignore*/
-      }
-    }
-    LOG.info("Version " + proxy.getVersion());
-
-    // Create the options.
-    Options options = getCommandLineOptions();
-
-    LogManager.getRootLogger().setLevel(Level.WARN);
-
+  private static ProxyConfiguration assembleConfigFromCommandLine(Options options, String[] args) {
     CommandLine commandLine = null;
     try {
       commandLine = new GnuParser().parse(options, args);
@@ -546,19 +540,15 @@ public class TcpProxyServer implements ServerWithStats {
       LogManager.getRootLogger().setLevel(Level.DEBUG);
     }
 
-    int listeningPort = 14000; // default value
+    ProxyConfiguration conf = new ProxyConfiguration();
+
     if (commandLine.hasOption("port")) {
-       listeningPort = Integer.parseInt(commandLine.getOptionValue("port"));
+      conf.listeningPort = Integer.parseInt(commandLine.getOptionValue("port"));
     }
-    ProxyConfiguration conf = new ProxyConfiguration(listeningPort);
 
-    int statusPort = 48138;
     if (commandLine.hasOption("webstatus_port")) {
-      statusPort =  Integer.parseInt(commandLine.getOptionValue("webstatus_port"));
+      conf.statusPort =  Integer.parseInt(commandLine.getOptionValue("webstatus_port"));
     }
-
-    // Launch ServerStats thread.
-    new Thread(new ServerStatus(proxy, statusPort)).start();
 
     // Maybe add jumphost.
     HostPort jumphostSshd = null;
@@ -700,31 +690,57 @@ public class TcpProxyServer implements ServerWithStats {
       }
     }
 
-    proxy.init(conf);
+    if (commandLine.hasOption("load_balancer")) {
+      HashSet<String> loadBalancers = new HashSet<String>(
+          Arrays.asList("RoundRobin", "LeastUsed", "UniformRandom"));
+      conf.loadBalancerString = commandLine.getOptionValue("load_balancer");
+      if (!loadBalancers.contains(conf.loadBalancerString)) {
+        LOG.error("Bad load_balancer value.");
+        printHelp(options);
+        System.exit(1);
+      }
+    }
+    return conf;
+  }
+
+  public static void main (String[] args) {
+    TcpProxyServer proxy = new TcpProxyServer("TransferAccelerator");
+
+
+    String mvnPropsPath = "/META-INF/maven/com.altiscale/TransferAccelerator/pom.properties";
+    Properties props = new Properties();
+
+    Class cls = proxy.getClass();
+    InputStream in = cls.getResourceAsStream(mvnPropsPath);
+    try {
+      props.load(in);
+      proxy.setVersion(props.getProperty("version", "unknown"));
+    } catch (Exception e) {
+      LOG.info(e.getMessage());
+    } finally  {
+      try {
+        in.close();
+      } catch (Exception e){
+        LOG.info(e.getMessage());
+        /*ignore*/
+      }
+    }
+    LOG.info("Version " + proxy.getVersion());
+
+    // Create the options.
+    Options options = getCommandLineOptions();
+
+    LogManager.getRootLogger().setLevel(Level.WARN);
+
+    ProxyConfiguration config = assembleConfigFromCommandLine(options, args);
+
+    proxy.init(config);
 
     if (proxy.getServerList().size() < 1) {
       LOG.error("No server specified.");
       printHelp(options);
       System.exit(1);
     }
-
-    LoadBalancer loadBalancer = proxy. new RoundRobin(proxy.getServerList());
-    if (commandLine.hasOption("load_balancer")) {
-      HashSet<String> loadBalancers = new HashSet<String>(
-          Arrays.asList("RoundRobin", "LeastUsed", "UniformRandom"));
-      String loadBalancerString = commandLine.getOptionValue("load_balancer");
-      if (!loadBalancers.contains(loadBalancerString)) {
-        LOG.error("Bad load_balancer value.");
-        printHelp(options);
-        System.exit(1);
-      }
-      if (loadBalancerString.equals("LeastUsed"))
-        loadBalancer = proxy. new LeastUsed(proxy.getServerList());
-      if (loadBalancerString.equals("UniformRandom"))
-        loadBalancer = proxy. new UniformRandom(proxy.getServerList());
-    }
-
-    proxy.setLoadBalancer(loadBalancer);
 
     // Loop on the listen port forever.
     proxy.runListeningLoop();
