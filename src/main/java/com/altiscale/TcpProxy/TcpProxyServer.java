@@ -715,8 +715,7 @@ public class TcpProxyServer implements ServerWithStats {
     String mvnPropsPath = "/META-INF/maven/com.altiscale/TransferAccelerator/pom.properties";
     Properties props = new Properties();
 
-    Class cls = new TcpProxyServer("TransferAccelerator").getClass();
-    InputStream in = cls.getResourceAsStream(mvnPropsPath);
+    InputStream in = TcpProxyServer.class.getResourceAsStream(mvnPropsPath);
     String version = "";
     try {
       props.load(in);
