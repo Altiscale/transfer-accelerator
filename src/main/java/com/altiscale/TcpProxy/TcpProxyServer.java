@@ -425,6 +425,8 @@ public class TcpProxyServer implements ServerWithStats {
 
     options.addOption("v", "verbose", false, "Verbose logging.");
 
+    options.addOption("V", "version", false, "Print version number.");
+
     options.addOption(OptionBuilder.withLongOpt("port")
                                    .withDescription("Listening port for proxy clients.")
                                    .withArgName("PORT")
@@ -533,6 +535,11 @@ public class TcpProxyServer implements ServerWithStats {
 
     if (commandLine.hasOption("h")) {
       printHelp(options);
+      System.exit(1);
+    }
+
+    if (commandLine.hasOption("version")) {
+      LOG.info("Transfer Accelerator Version " +  getProxyVersion());
       System.exit(1);
     }
 
@@ -704,18 +711,16 @@ public class TcpProxyServer implements ServerWithStats {
     return conf;
   }
 
-  public static void main (String[] args) {
-    TcpProxyServer proxy = new TcpProxyServer("TransferAccelerator");
-
-
+  public static String getProxyVersion() {
     String mvnPropsPath = "/META-INF/maven/com.altiscale/TransferAccelerator/pom.properties";
     Properties props = new Properties();
 
-    Class cls = proxy.getClass();
+    Class cls = new TcpProxyServer("TransferAccelerator").getClass();
     InputStream in = cls.getResourceAsStream(mvnPropsPath);
+    String version = "";
     try {
       props.load(in);
-      proxy.setVersion(props.getProperty("version", "unknown"));
+      version = props.getProperty("version", "unknown");
     } catch (Exception e) {
       LOG.info(e.getMessage());
     } finally  {
@@ -726,6 +731,13 @@ public class TcpProxyServer implements ServerWithStats {
         /*ignore*/
       }
     }
+    return version;
+  }
+
+  public static void main (String[] args) {
+    TcpProxyServer proxy = new TcpProxyServer("TransferAccelerator");
+
+    proxy.setVersion(getProxyVersion());
     LOG.info("Version " + proxy.getVersion());
 
     // Create the options.
