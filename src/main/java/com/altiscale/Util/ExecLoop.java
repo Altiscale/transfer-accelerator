@@ -88,7 +88,7 @@ public class ExecLoop implements Runnable {
   */
   public Thread start() {
     assert null == thread;  // we should never call this method twice.
-    LOG.info("Starting thread to run [" + command + "]");
+    LOG.debug("Starting thread to run [" + command + "]");
     thread = new Thread(this);
     thread.start();
     return thread;
