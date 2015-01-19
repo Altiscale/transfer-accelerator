@@ -97,7 +97,7 @@ public class TcpTunnel {
      */
     public Thread start() {
       assert null == thread;  // we should never call this method twice.
-      LOG.info("Starting thread [" + threadName + "]");
+      LOG.debug("Starting thread [" + threadName + "]");
       thread = new Thread(this, threadName);
       thread.start();
       return thread;
@@ -136,7 +136,7 @@ public class TcpTunnel {
           }
         } while (cnt >= 0);
       } catch (IOException ioe) {
-        LOG.info("Closing socket after IO exception while reading: " + ioe.getMessage());
+        LOG.debug("Closing socket after IO exception while reading: " + ioe.getMessage());
       }
       // Either the input stream is closed or we got an exception. Either way, close the
       // sockets since we're done with this tunnel.
@@ -148,9 +148,9 @@ public class TcpTunnel {
             "]: " + ioe.getMessage());
       }
 
-      LOG.info(byteRateCnt.toString());
+      LOG.debug(byteRateCnt.toString());
 
-      LOG.info("Exiting thread [" + threadName + "]");
+      LOG.debug("Exiting thread [" + threadName + "]");
     }
 
     public void closeConnection() throws IOException {

@@ -146,7 +146,7 @@ public class Server {
   public void establishTunnel(Socket clientSocket) throws java.io.IOException {
     requestCnt.increment();
     Socket serverSocket = new Socket(hostPort.host, hostPort.port);
-    LOG.info("Setting tunnel between [" +
+    LOG.debug("Setting tunnel between [" +
         clientSocket.getInetAddress().getHostAddress() + ":" +
         clientSocket.getPort() + "] and server [" +
         hostPort.host + ":" + hostPort.port + "]");
