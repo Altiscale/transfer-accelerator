@@ -103,9 +103,11 @@ class JumpHost {
 
 class ProxyConfiguration {
   // Port where our clients will connect to.
+  static final int defaultListeningPort = 14000;
   int listeningPort;
 
   // Port where we export web-based status.
+  static final int defaultStatusPort = 48138;
   int statusPort;
 
   String loadBalancerString;
@@ -117,8 +119,8 @@ class ProxyConfiguration {
   JumpHost jumphost;
 
   public ProxyConfiguration() {
-    listeningPort = 14000;              // default value
-    statusPort = 48138;                 // default value
+    listeningPort = defaultListeningPort;
+    statusPort = defaultStatusPort;
     loadBalancerString = "RoundRobin";  // default value
     serverHostPortList = new ArrayList<HostPort>();
     jumphost = null;
@@ -428,14 +430,18 @@ public class TcpProxyServer implements ServerWithStats {
     options.addOption("V", "version", false, "Print version number.");
 
     options.addOption(OptionBuilder.withLongOpt("port")
-                                   .withDescription("Listening port for proxy clients.")
+                                   .withDescription("Listening port for proxy clients. " +
+                                       "Default listening port is " +
+                                       ProxyConfiguration.defaultListeningPort + ".")
                                    .withArgName("PORT")
                                    .withType(Number.class)
                                    .hasArg()
                                    .create('p'));
 
     options.addOption(OptionBuilder.withLongOpt("webstatus_port")
-                                   .withDescription("Port for proxy status in html format.")
+                                   .withDescription("Port for proxy status in html format. " +
+                                       "Default status port is " +
+                                       ProxyConfiguration.defaultStatusPort + ".")
                                    .withArgName("STATUS_PORT")
                                    .withType(Number.class)
                                    .hasArg()
