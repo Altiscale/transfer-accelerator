@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 
 /**
 * ServerStatus is a Runnable that listens on a port and returns a html page with values
-* from getServerStats.
+* from getServerStats on "/stats" and its health status on "/admin".
 */
 public class ServerStatus implements Runnable {
 

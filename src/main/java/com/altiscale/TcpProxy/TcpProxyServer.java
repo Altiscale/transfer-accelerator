@@ -439,9 +439,9 @@ public class TcpProxyServer implements ServerWithStats {
                                    .create('p'));
 
     options.addOption(OptionBuilder.withLongOpt("webstatus_port")
-                                   .withDescription("Port for proxy status in html format. " +
-                                       "Default status port is " +
-                                       ProxyConfiguration.defaultStatusPort + ".")
+                                   .withDescription("Port for proxy status in html format: " +
+                                       "http://localhost:" +
+                                       ProxyConfiguration.defaultStatusPort + "/stats")
                                    .withArgName("STATUS_PORT")
                                    .withType(Number.class)
                                    .hasArg()
@@ -748,7 +748,7 @@ public class TcpProxyServer implements ServerWithStats {
     // Create the options.
     Options options = getCommandLineOptions();
 
-    LogManager.getRootLogger().setLevel(Level.WARN);
+    LogManager.getRootLogger().setLevel(Level.INFO);
 
     ProxyConfiguration config = assembleConfigFromCommandLine(options, args);
 
