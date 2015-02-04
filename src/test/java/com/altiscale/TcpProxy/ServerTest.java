@@ -53,14 +53,15 @@ public class ServerTest extends TestCase {
                                      "acme-keys",
                                      true,
                                      "blowfish-cbc,aes128-cbc,3des-cbc",
-                                     "/usr/bin/ssh");
+                                     "/usr/bin/ssh",
+                                     true);
     Server server = new Server(hostPort, jumphost);
     String sshCommand = server.sshJumphostCommand();
     System.out.println(sshCommand);
     assert sshCommand.equals(
         "/usr/bin/ssh -i acme-keys -C " +
         "-c blowfish-cbc,aes128-cbc,3des-cbc -n -N -L " +
-        "12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
+        "\\*:12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
   }
 
   public void testSshTunnelCommandBadAll() {
@@ -71,7 +72,8 @@ public class ServerTest extends TestCase {
                                      "/tmp/road-runner-keys",
                                      true,
                                      "des",
-                                     "/tmp/roadrunner/rm -rf /;");
+                                     "/tmp/roadrunner/rm -rf /;",
+                                     false);
     Server server = new Server(hostPort, jumphost);
     String sshCommand = server.sshJumphostCommand();
     System.out.println(sshCommand);
@@ -88,13 +90,32 @@ public class ServerTest extends TestCase {
                                      null,
                                      false,
                                      null,
-                                     null);
+                                     null,
+                                     false);
     Server server = new Server(hostPort, jumphost);
     String sshCommand = server.sshJumphostCommand();
     System.out.println(sshCommand);
     assert sshCommand.equals(
         "ssh -n -N -L 12345:acme-supersecret-server:14000 -l wileEcoyote acme-secret-lab");
   }
+
+  public void testSshTunnelCommandOpenInterfaces() {
+    HostPort hostPort = new HostPort("localhost", 12345);
+    JumpHost jumphost = new JumpHost(new HostPort("acme-secret-lab", 22),
+                                     new HostPort("acme-supersecret-server", 14000),
+                                     "wileEcoyote",
+                                     null,
+                                     false,
+                                     null,
+                                     null,
+                                     true);
+    Server server = new Server(hostPort, jumphost);
+    String sshCommand = server.sshJumphostCommand();
+    System.out.println(sshCommand);
+    assert sshCommand.equals(
+        "ssh -n -N -L \\*:12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
+  }
+
 
   public void testSshTunnelCommand() {
     HostPort hostPort = new HostPort("localhost", 12345);
@@ -104,7 +125,8 @@ public class ServerTest extends TestCase {
                                      null,
                                      false,
                                      null,
-                                     null);
+                                     null,
+                                     false);
     Server server = new Server(hostPort, jumphost);
     String sshCommand = server.sshJumphostCommand();
     System.out.println(sshCommand);

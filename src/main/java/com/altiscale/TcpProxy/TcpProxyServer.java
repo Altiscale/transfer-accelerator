@@ -56,6 +56,7 @@ class HostPort {
     this.port = port;
   }
 
+  @Override
   public String toString() {
     return "" + host + ":" + port;
   }
@@ -69,20 +70,22 @@ class JumpHost {
   boolean compression;
   String ciphers;
   String sshBinary;
+  boolean openInterfaces;
 
-  /*  @param sshd         host:port of machine to use for establishing ssh tunnel to
-   *                      jumphostServer. sshd.host is the name of the machine where sshd
-   *                      is running, and sshd.port is the sshd port number. If port
-   *                      number is -1, we let ssh use default port for that hostname.
-   *  @param server       End server we want to connect to via ssh tunnel. For example,
-   *                      httpfs-node:14000. server.host must be visible from host where
-   *                      sshd is running.
-   *  @param user         Optional username we want to use for ssh (to override the default).
-   *  @param credentials  Optional path to a file with ssh credentials to use with ssh -i
-   *  @param compression  If true, add optional -C flag to ssh tunnel command to turn on
-   *                      compression.
-   *  @param ciphers      Optional string for ssh -c command option for cipher specs.
-   *  @param sshBinary    Optional binary path and name to use instead of default 'ssh'.
+  /*  @param sshd            host:port of machine to use for establishing ssh tunnel to
+   *                         jumphostServer. sshd.host is the name of the machine where sshd
+   *                         is running, and sshd.port is the sshd port number. If port
+   *                         number is -1, we let ssh use default port for that hostname.
+   *  @param server          End server we want to connect to via ssh tunnel. For example,
+   *                         httpfs-node:14000. server.host must be visible from host where
+   *                         sshd is running.
+   *  @param user            Optional username we want to use for ssh (to override the default).
+   *  @param credentials     Optional path to a file with ssh credentials to use with ssh -i
+   *  @param compression     If true, add optional -C flag to ssh tunnel command to turn on
+   *                         compression.
+   *  @param ciphers         Optional string for ssh -c command option for cipher specs.
+   *  @param sshBinary       Optional binary path and name to use instead of default 'ssh'.
+   *  @param openInterfaces  Tunnels will be open on all interfaces not just the default one.
    */
   public JumpHost(HostPort sshd,
                   HostPort server,
@@ -90,7 +93,8 @@ class JumpHost {
                   String credentials,
                   boolean compression,
                   String ciphers,
-                  String sshBinary) {
+                  String sshBinary,
+                  boolean openInterfaces) {
     this.sshd = sshd;
     this.server = server;
     this.user = user;
@@ -98,6 +102,7 @@ class JumpHost {
     this.compression = compression;
     this.ciphers = ciphers;
     this.sshBinary = sshBinary;
+    this.openInterfaces = openInterfaces;
   }
 }
 
@@ -171,6 +176,7 @@ public class TcpProxyServer implements ServerWithStats {
       this.servers = servers;
     }
 
+    @Override
     public Server getServer() {
       nextServerId = (nextServerId + 1) % serverList.size();
       return serverList.get(nextServerId);
@@ -184,7 +190,8 @@ public class TcpProxyServer implements ServerWithStats {
        this.servers = servers;
      }
 
-     public Server getServer() {
+     @Override
+    public Server getServer() {
        return servers.get(
            new Random(System.currentTimeMillis()).nextInt(servers.size()));
      }
@@ -197,6 +204,7 @@ public class TcpProxyServer implements ServerWithStats {
       this.servers = servers;
     }
 
+    @Override
     public Server getServer() {
       Server leastUsedServer = null;
       long leastUsedByteRate = Long.MAX_VALUE;
@@ -418,6 +426,7 @@ public class TcpProxyServer implements ServerWithStats {
     }
   }
 
+  @Override
   public String getServerName() {
     return name;
   }
@@ -508,6 +517,13 @@ public class TcpProxyServer implements ServerWithStats {
             "-p JH_PORT JUMPHOST")
         .hasArg()
         .create('y'));
+
+    options.addOption(OptionBuilder.withLongOpt("openInterfaces")
+        .withArgName("OPEN_INTERFACES")
+        .withDescription("Open all interfaces for ssh tunnel using \\* as bind_address: " +
+                         "SSH_BINARY \\*:PORT:JHSERVER:JHS_PORT")
+        .hasArg()
+        .create('o'));
 
     options.addOption(OptionBuilder.withLongOpt("help").create('h'));
 
@@ -652,13 +668,18 @@ public class TcpProxyServer implements ServerWithStats {
       }
       sshBinary = commandLine.getOptionValue("ssh_binary");
     }
+    boolean openInterfaces = false;
+    if (commandLine.hasOption("open_interfaces")) {
+      openInterfaces = true;
+    }
 
     // Add jumphost to the config.
     if (null != jumphostSshd && null != jumphostServer) {
       conf.jumphost = new JumpHost(jumphostSshd, jumphostServer,
                                    jumphostUser, jumphostCredentials,
                                    jumphostCompression, jumphostCiphers,
-                                   sshBinary);
+                                   sshBinary,
+                                   openInterfaces);
     }
 
     if (!commandLine.hasOption("num_servers") && !commandLine.hasOption("servers")) {

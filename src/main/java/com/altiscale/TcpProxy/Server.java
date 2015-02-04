@@ -102,8 +102,14 @@ public class Server {
     }
 
     // Start in foreground, but not interactive.
-    sshTunnelCmd += " -n -N -L";
-    sshTunnelCmd += " " + hostPort.port + ":" + jumphost.server.host + ":" + jumphost.server.port;
+    sshTunnelCmd += " -n -N -L ";
+
+    // Open all network interfaces.
+    if (jumphost.openInterfaces)
+      sshTunnelCmd += "\\*:";
+
+    sshTunnelCmd += hostPort.port + ":" + jumphost.server.host + ":" + jumphost.server.port;
+
     if (null != jumphost.user) {
       sshTunnelCmd += " -l " + jumphost.user;
     }
