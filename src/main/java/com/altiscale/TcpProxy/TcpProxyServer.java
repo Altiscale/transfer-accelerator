@@ -518,12 +518,9 @@ public class TcpProxyServer implements ServerWithStats {
         .hasArg()
         .create('y'));
 
-    options.addOption(OptionBuilder.withLongOpt("openInterfaces")
-        .withArgName("OPEN_INTERFACES")
-        .withDescription("Open all interfaces for ssh tunnel using \\* as bind_address: " +
-                         "SSH_BINARY \\*:PORT:JHSERVER:JHS_PORT")
-        .hasArg()
-        .create('o'));
+    options.addOption("o", "openInterfaces", false,
+        "Open all interfaces for ssh tunnel using \\* as bind_address: " +
+        "SSH_BINARY \\*:PORT:JHSERVER:JHS_PORT");
 
     options.addOption(OptionBuilder.withLongOpt("help").create('h'));
 
@@ -669,7 +666,7 @@ public class TcpProxyServer implements ServerWithStats {
       sshBinary = commandLine.getOptionValue("ssh_binary");
     }
     boolean openInterfaces = false;
-    if (commandLine.hasOption("open_interfaces")) {
+    if (commandLine.hasOption("openInterfaces")) {
       openInterfaces = true;
     }
 
