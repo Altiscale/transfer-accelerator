@@ -58,7 +58,7 @@ class HostPort {
 
   @Override
   public String toString() {
-    return "" + host + ":" + port;
+    return host + ":" + port;
   }
 }
 
@@ -406,7 +406,7 @@ public class TcpProxyServer implements ServerWithStats {
         break;
       } catch (IOException ioe) {
         LOG.error("Error while connecting to server " +
-                  server.hostPort.host + ":" + server.hostPort.port);
+                  server.hostPort);
         server.incrementFailedConn();
       }
     }
