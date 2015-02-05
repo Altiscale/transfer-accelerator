@@ -190,8 +190,8 @@ public class TcpProxyServer implements ServerWithStats {
        this.servers = servers;
      }
 
-    @Override
-    public Server getServer() {
+     @Override
+     public Server getServer() {
        return servers.get(
            new Random(System.currentTimeMillis()).nextInt(servers.size()));
      }
