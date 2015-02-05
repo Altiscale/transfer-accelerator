@@ -58,7 +58,7 @@ class HostPort {
 
   @Override
   public String toString() {
-    return "" + host + ":" + port;
+    return host + ":" + port;
   }
 }
 

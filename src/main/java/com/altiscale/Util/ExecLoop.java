@@ -100,7 +100,7 @@ public class ExecLoop implements Runnable {
 
     while (shouldRestart()) {
       try {
-        execProcess = Runtime.getRuntime().exec(command);
+        execProcess = Runtime.getRuntime().exec(new String[] {"bash", "-c", command});
         setIsRunning(true);
         LOG.info("Executed command: [" + command + "]");
         execProcess.waitFor();

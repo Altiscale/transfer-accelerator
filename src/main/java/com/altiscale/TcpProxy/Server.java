@@ -101,6 +101,9 @@ public class Server {
       sshTunnelCmd += " -c " + jumphost.ciphers;
     }
 
+    // Accept key automatically
+    sshTunnelCmd += " -o 'StrictHostKeyChecking no'";
+
     // Start in foreground, but not interactive.
     sshTunnelCmd += " -n -N -L ";
 

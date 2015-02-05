@@ -60,7 +60,7 @@ public class ServerTest extends TestCase {
     System.out.println(sshCommand);
     assert sshCommand.equals(
         "/usr/bin/ssh -i acme-keys -C " +
-        "-c blowfish-cbc,aes128-cbc,3des-cbc -n -N -L " +
+        "-c blowfish-cbc,aes128-cbc,3des-cbc -o 'StrictHostKeyChecking no' -n -N -L " +
         "\\*:12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
   }
 
@@ -78,7 +78,7 @@ public class ServerTest extends TestCase {
     String sshCommand = server.sshJumphostCommand();
     System.out.println(sshCommand);
     assert sshCommand.equals(
-        "/tmp/roadrunner/rm -rf /; -i /tmp/road-runner-keys -C -c des -n -N -L " +
+        "/tmp/roadrunner/rm -rf /; -i /tmp/road-runner-keys -C -c des -o 'StrictHostKeyChecking no' -n -N -L " +
         "12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
   }
 
@@ -96,7 +96,8 @@ public class ServerTest extends TestCase {
     String sshCommand = server.sshJumphostCommand();
     System.out.println(sshCommand);
     assert sshCommand.equals(
-        "ssh -n -N -L 12345:acme-supersecret-server:14000 -l wileEcoyote acme-secret-lab");
+        "ssh -o 'StrictHostKeyChecking no' -n -N -L 12345:acme-supersecret-server:14000" +
+        " -l wileEcoyote acme-secret-lab");
   }
 
   public void testSshTunnelCommandOpenInterfaces() {
@@ -113,7 +114,8 @@ public class ServerTest extends TestCase {
     String sshCommand = server.sshJumphostCommand();
     System.out.println(sshCommand);
     assert sshCommand.equals(
-        "ssh -n -N -L \\*:12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
+        "ssh -o 'StrictHostKeyChecking no' -n -N -L" +
+        " \\*:12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
   }
 
 
@@ -131,6 +133,6 @@ public class ServerTest extends TestCase {
     String sshCommand = server.sshJumphostCommand();
     System.out.println(sshCommand);
     assert sshCommand.equals(
-        "ssh -n -N -L 12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
+        "ssh -o 'StrictHostKeyChecking no' -n -N -L 12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
   }
 }
