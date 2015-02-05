@@ -102,7 +102,7 @@ public class Server {
     }
 
     // Accept key automatically
-    sshTunnelCmd += " -o 'StrictHostKeyChecking no'";
+    sshTunnelCmd += " -o StrictHostKeyChecking=no";
 
     // Start in foreground, but not interactive.
     sshTunnelCmd += " -n -N -L ";
@@ -158,7 +158,7 @@ public class Server {
     LOG.debug("Setting tunnel between [" +
         clientSocket.getInetAddress().getHostAddress() + ":" +
         clientSocket.getPort() + "] and server [" +
-        hostPort.host + ":" + hostPort.port + "]");
+        hostPort + "]");
     TcpTunnel tunnel = new TcpTunnel(clientSocket, serverSocket, this);
 
     // Create threads that will handle this tunnel.
