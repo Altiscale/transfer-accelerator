@@ -61,7 +61,7 @@ public class ServerTest extends TestCase {
     assert sshCommand.equals(
         "/usr/bin/ssh -i acme-keys -C " +
         "-c blowfish-cbc,aes128-cbc,3des-cbc -o StrictHostKeyChecking=no -n -N -L " +
-        "\\*:12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
+        "*:12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
   }
 
   public void testSshTunnelCommandBadAll() {
@@ -115,7 +115,7 @@ public class ServerTest extends TestCase {
     System.out.println(sshCommand);
     assert sshCommand.equals(
         "ssh -o StrictHostKeyChecking=no -n -N -L" +
-        " \\*:12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
+        " *:12345:acme-supersecret-server:14000 -l wileEcoyote -p 22 acme-secret-lab");
   }
 
 
