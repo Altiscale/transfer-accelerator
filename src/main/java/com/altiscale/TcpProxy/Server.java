@@ -109,7 +109,7 @@ public class Server {
 
     // Open all network interfaces.
     if (jumphost.openInterfaces)
-      sshTunnelCmd += "\\*:";
+      sshTunnelCmd += "*:";
 
     sshTunnelCmd += hostPort.port + ":" + jumphost.server.host + ":" + jumphost.server.port;
 
