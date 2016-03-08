@@ -113,4 +113,8 @@ public class ExecLoop implements Runnable {
       }
     }
   }
+
+  public void stop() {
+    if (execProcess != null) execProcess.destroy();
+  }
 }

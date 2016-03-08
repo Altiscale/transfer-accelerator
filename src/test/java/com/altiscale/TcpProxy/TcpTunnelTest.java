@@ -17,9 +17,9 @@
 /*  TcpTunnel unittests. */
 package com.altiscale.TcpProxy;
 
-import com.altiscale.TcpProxy.HostPort;
 import com.altiscale.TcpProxy.Server;
 import com.altiscale.TcpProxy.TcpTunnel;
+
 import org.apache.log4j.BasicConfigurator;
 
 import java.io.IOException;
@@ -27,10 +27,12 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import com.altiscale.Util.HostPort;
 import com.altiscale.Util.SecondMinuteHourCounter;
 
 /**
