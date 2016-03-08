@@ -17,7 +17,6 @@
 package com.altiscale.Util;
 
 import java.util.ArrayDeque;
-import java.util.Iterator;
 
 class AltiTimer {
   /** This class wraps System.currentTimeMillis. It's useful for testing. */

@@ -18,8 +18,9 @@
 /* TcpProxy Server unittests. */
 package com.altiscale.TcpProxy;
 
-import com.altiscale.TcpProxy.HostPort;
 import com.altiscale.TcpProxy.Server;
+import com.altiscale.Util.HostPort;
+import com.altiscale.Util.JumpHost;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

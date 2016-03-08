@@ -20,9 +20,9 @@ import org.apache.log4j.Logger;
 
 import java.net.Socket;
 
-import com.altiscale.TcpProxy.HostPort;
-import com.altiscale.TcpProxy.JumpHost;
 import com.altiscale.Util.ExecLoop;
+import com.altiscale.Util.HostPort;
+import com.altiscale.Util.JumpHost;
 import com.altiscale.Util.SecondMinuteHourCounter;
 
 /**
@@ -163,5 +163,9 @@ public class Server {
 
     // Create threads that will handle this tunnel.
     tunnel.spawnTunnelThreads();
+  }
+  
+  void close() {
+    sshProcess.stop();
   }
 }

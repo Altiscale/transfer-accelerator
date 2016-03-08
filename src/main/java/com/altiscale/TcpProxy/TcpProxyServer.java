@@ -22,132 +22,37 @@ import org.apache.log4j.Level;
 
 import java.io.InputStream;
 import java.io.IOException;
-
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.ServerSocket;
 import java.net.Socket;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Random;
 
-import com.altiscale.Util.ExecLoop;
-import com.altiscale.Util.SecondMinuteHourCounter;
+import com.altiscale.Util.HostPort;
+import com.altiscale.Util.JumpHost;
 import com.altiscale.Util.ServerStatus;
 import com.altiscale.Util.ServerWithStats;
 
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 
-class HostPort {
-  String host;
-  int port;
+class ShutdownCleanup extends Thread {
+  private static Logger LOG = Logger.getLogger("TransferAccelerator");
+  private TcpProxyServer proxy;
 
-  public HostPort(String host, int port) {
-    this.host = host;
-    this.port = port;
+  public ShutdownCleanup(TcpProxyServer proxy) {
+    this.proxy = proxy;
   }
 
-  @Override
-  public String toString() {
-    return host + ":" + port;
-  }
-}
-
-class JumpHost {
-  HostPort sshd;
-  HostPort server;
-  String user;
-  String credentials;
-  boolean compression;
-  String ciphers;
-  String sshBinary;
-  boolean openInterfaces;
-
-  /*  @param sshd            host:port of machine to use for establishing ssh tunnel to
-   *                         jumphostServer. sshd.host is the name of the machine where sshd
-   *                         is running, and sshd.port is the sshd port number. If port
-   *                         number is -1, we let ssh use default port for that hostname.
-   *  @param server          End server we want to connect to via ssh tunnel. For example,
-   *                         httpfs-node:14000. server.host must be visible from host where
-   *                         sshd is running.
-   *  @param user            Optional username we want to use for ssh (to override the default).
-   *  @param credentials     Optional path to a file with ssh credentials to use with ssh -i
-   *  @param compression     If true, add optional -C flag to ssh tunnel command to turn on
-   *                         compression.
-   *  @param ciphers         Optional string for ssh -c command option for cipher specs.
-   *  @param sshBinary       Optional binary path and name to use instead of default 'ssh'.
-   *  @param openInterfaces  Tunnels will be open on all interfaces not just the default one.
-   */
-  public JumpHost(HostPort sshd,
-                  HostPort server,
-                  String user,
-                  String credentials,
-                  boolean compression,
-                  String ciphers,
-                  String sshBinary,
-                  boolean openInterfaces) {
-    this.sshd = sshd;
-    this.server = server;
-    this.user = user;
-    this.credentials = credentials;
-    this.compression = compression;
-    this.ciphers = ciphers;
-    this.sshBinary = sshBinary;
-    this.openInterfaces = openInterfaces;
-  }
-}
-
-class ProxyConfiguration {
-  // Port where our clients will connect to.
-  static final int defaultListeningPort = 14000;
-  int listeningPort;
-
-  // Port where we export web-based status.
-  static final int defaultStatusPort = 48138;
-  int statusPort;
-
-  String loadBalancerString;
-
-  // List of all our servers.
-  ArrayList<HostPort> serverHostPortList;
-
-  // JumpHost to use for establishing ssh tunnels to the server. Null if we don't want it.
-  JumpHost jumphost;
-
-  public ProxyConfiguration() {
-    listeningPort = defaultListeningPort;
-    statusPort = defaultStatusPort;
-    loadBalancerString = "RoundRobin";  // default value
-    serverHostPortList = new ArrayList<HostPort>();
-    jumphost = null;
-  }
-
-  public HostPort parseServerString(String server) throws URISyntaxException {
-    URI uri = new URI("my://" + server);
-    String host = uri.getHost();
-    int port = uri.getPort();
-    if (uri.getHost() == null) {
-      throw new URISyntaxException(uri.toString(), "URI must have at least a hostname.");
-    }
-    // Library sets port to -1 if it was missing in String server.
-    return new HostPort(host, port);
-  }
-
-  public void parseServerStringAndAdd(String server) throws URISyntaxException {
-    HostPort hostPort = parseServerString(server);
-    if (hostPort.port == -1) {
-      throw new URISyntaxException(server, "No port specified for server in server list.");
-    }
-    serverHostPortList.add(hostPort);
+  public void run() {
+    LOG.info("Stopping proxy on shutdown cleanup.");
+    proxy.stop();
   }
 }
 
@@ -178,8 +83,8 @@ public class TcpProxyServer implements ServerWithStats {
 
     @Override
     public Server getServer() {
-      nextServerId = (nextServerId + 1) % serverList.size();
-      return serverList.get(nextServerId);
+      nextServerId = (nextServerId + 1) % servers.size();
+      return servers.get(nextServerId);
     }
   }
 
@@ -227,7 +132,6 @@ public class TcpProxyServer implements ServerWithStats {
 
   // log4j logger.
   private static Logger LOG = Logger.getLogger("TransferAccelerator");
-
   // Config for this proxy.
   private ProxyConfiguration config;
 
@@ -423,6 +327,12 @@ public class TcpProxyServer implements ServerWithStats {
       } catch (IOException ioe) {
         LOG.error("IOException while accepting connection: " + ioe.getMessage());
       }
+    }
+  }
+
+  public void stop() {
+    for (Server server: serverList) {
+      server.close();
     }
   }
 
@@ -759,6 +669,8 @@ public class TcpProxyServer implements ServerWithStats {
 
   public static void main (String[] args) {
     TcpProxyServer proxy = new TcpProxyServer("TransferAccelerator");
+    ShutdownCleanup sh = new ShutdownCleanup(proxy);
+    Runtime.getRuntime().addShutdownHook(sh);
 
     proxy.setVersion(getProxyVersion());
     LOG.info("Version " + proxy.getVersion());
