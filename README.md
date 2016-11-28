@@ -4,6 +4,7 @@ TransferAccelerator is a proxy utility to connect clients to multiple replicas o
 Users can also use TransferAccelerator to setup multiple ssh tunnels via jump-host to a single
 server.
 
+(c) 2016 SAP SE or an SAP affiliate company. All rights reserved.
 
 ##Building:
 
